@@ -123,3 +123,4 @@ flowchart LR
    Receiving a document or attending a coordination meeting does not equal a completed deliverable. Statuses clearly delineate `In-Progress` from `Completed Output`.
 4. **Resilient Offline / Local First:**
    Components provide optimistic UI updates, robust error feedback, and draft auto-saving to prevent loss of long narrative entries.
+

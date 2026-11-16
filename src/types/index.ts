@@ -127,6 +127,7 @@ export interface DailyActivity extends BaseEntity {
   category: ActivityCategory;
   projectId?: string;
   projectName?: string;
+  project?: string;
   timeSpentHours?: number;
   status: ActivityStatus;
   commitmentId?: string;
@@ -158,6 +159,7 @@ export interface DocumentRecord extends BaseEntity {
   senderSource: string;
   projectId?: string;
   projectName?: string;
+  project?: string;
   typeOfStudy?: string;            // Feasibility Study, Detailed Engineering, etc.
   calendarYear: number;
   dateReceived: string;            // Officially stamped date

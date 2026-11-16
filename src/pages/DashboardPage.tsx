@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   CheckCircle,
@@ -8,15 +9,35 @@ import {
   Target,
   FileCheck,
   TrendingUp,
-  Filter,
   Calendar,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
+import { useApp } from '@/contexts/AppContext';
 
 export const DashboardPage: React.FC = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('SEM2');
+  const navigate = useNavigate();
+  const { activities, commitments, documents, selectedPeriod, setSelectedPeriod } = useApp();
+
+  const activeActivities = activities.filter((a) => !a.isDeleted);
+  const totalCount = activeActivities.length;
+  const completedCount = activeActivities.filter((a) => a.status === 'COMPLETED').length;
+  const ongoingCount = activeActivities.filter((a) => a.status === 'ONGOING').length;
+  const awaitingClassificationCount = activeActivities.filter(
+    (a) => a.classificationStatus === 'PENDING'
+  ).length;
+
+  const activeDocuments = documents.filter((d) => !d.isDeleted);
+  const pendingDocs = activeDocuments.filter((d) => d.status === 'Pending' || d.status === 'On-going');
+
+  // Compute zero accomplishment commitments
+  const zeroAccomplishments = commitments.filter((c) => {
+    const acts = activeActivities.filter((a) => a.commitmentId === c.id && a.status === 'COMPLETED');
+    return acts.length === 0;
+  });
+
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -48,8 +69,12 @@ export const DashboardPage: React.FC = () => {
             </select>
           </div>
 
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-3.5 h-3.5" />}>
-            Advanced Filters
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate('/activities')}
+          >
+            Record Activity
           </Button>
         </div>
       </div>
@@ -61,7 +86,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Activities</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">128</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{totalCount}</h3>
               <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 <span>Recorded this cycle</span>
@@ -78,9 +103,9 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completed Activities</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">94</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{completedCount}</h3>
               <p className="text-[11px] text-slate-500 mt-1">
-                73.4% execution rate
+                {completionRate}% execution rate
               </p>
             </div>
             <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-600">
@@ -94,7 +119,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ongoing Activities</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">26</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{ongoingCount}</h3>
               <p className="text-[11px] text-blue-600 font-medium mt-1">
                 Active technical reviews & designs
               </p>
@@ -110,9 +135,9 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Awaiting Classification</p>
-              <h3 className="text-2xl font-bold text-amber-700 mt-1">8</h3>
+              <h3 className="text-2xl font-bold text-amber-700 mt-1">{awaitingClassificationCount}</h3>
               <p className="text-[11px] text-amber-600 font-medium mt-1">
-                Ready for IPCR matching
+                {awaitingClassificationCount > 0 ? 'Action required in Activities' : 'All matched'}
               </p>
             </div>
             <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600">
@@ -132,7 +157,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <span className="text-xs text-slate-500">Active Commitments</span>
-              <p className="text-base font-bold text-slate-900">14 Indicators</p>
+              <p className="text-base font-bold text-slate-900">{commitments.length} Indicators</p>
             </div>
           </div>
           <Badge variant="blue">Active</Badge>
@@ -146,10 +171,12 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <span className="text-xs text-slate-500">No Recorded Output</span>
-              <p className="text-base font-bold text-rose-700">2 Commitments</p>
+              <p className="text-base font-bold text-rose-700">{zeroAccomplishments.length} Commitments</p>
             </div>
           </div>
-          <Badge variant="rose">Requires Attention</Badge>
+          <Badge variant={zeroAccomplishments.length > 0 ? 'rose' : 'emerald'}>
+            {zeroAccomplishments.length > 0 ? 'Requires Attention' : 'All Started'}
+          </Badge>
         </Card>
 
         {/* Documents Pending Action */}
@@ -160,10 +187,12 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <span className="text-xs text-slate-500">Documents Pending</span>
-              <p className="text-base font-bold text-amber-800">5 Documents</p>
+              <p className="text-base font-bold text-amber-800">{pendingDocs.length} Documents</p>
             </div>
           </div>
-          <Badge variant="amber">Action Required</Badge>
+          <Badge variant={pendingDocs.length > 0 ? 'amber' : 'emerald'}>
+            {pendingDocs.length > 0 ? 'Action Required' : 'Up to Date'}
+          </Badge>
         </Card>
       </div>
 
@@ -178,89 +207,48 @@ export const DashboardPage: React.FC = () => {
                 Live comparison of validated daily accomplishments against approved commitments
               </CardDescription>
             </div>
-            <Badge variant="slate">2nd Sem 2026</Badge>
+            <Badge variant="slate">{selectedPeriod} 2026</Badge>
           </CardHeader>
 
-          <div className="p-5 divide-y divide-slate-100 space-y-4">
-            {/* Target Item 1 */}
-            <div className="pt-2 first:pt-0">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-nia-700 bg-nia-50 px-1.5 py-0.5 rounded border border-nia-200">
-                    C-01
-                  </span>
-                  Detailed Engineering Design (DED) of Irrigation Projects
-                </span>
-                <span className="text-slate-600">8 / 10 Designs (80%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div className="bg-nia-600 h-2.5 rounded-full transition-all" style={{ width: '80%' }} />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                <span>Measurement: Count (DED Documents Completed)</span>
-                <span>Target: 10 Projects</span>
-              </div>
-            </div>
+          <div className="p-5 divide-y divide-slate-100 space-y-4 max-h-[520px] overflow-y-auto">
+            {commitments.map((com) => {
+              const acts = activeActivities.filter(
+                (a) => a.commitmentId === com.id && a.status === 'COMPLETED'
+              );
+              const count = acts.length;
+              const targetNum = com.numericalTarget || 1;
+              const pct = Math.min(100, Math.round((count / targetNum) * 100));
 
-            {/* Target Item 2 */}
-            <div className="pt-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-nia-700 bg-nia-50 px-1.5 py-0.5 rounded border border-nia-200">
-                    C-02
-                  </span>
-                  Technical Review of Feasibility Studies (FS)
-                </span>
-                <span className="text-emerald-700">6 / 6 Studies (100%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div className="bg-emerald-600 h-2.5 rounded-full transition-all" style={{ width: '100%' }} />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                <span>Measurement: Count (Evaluation Reports Submitted)</span>
-                <span className="text-emerald-600 font-semibold">Target Completed</span>
-              </div>
-            </div>
-
-            {/* Target Item 3 */}
-            <div className="pt-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-nia-700 bg-nia-50 px-1.5 py-0.5 rounded border border-nia-200">
-                    C-03
-                  </span>
-                  Field Inspection and Dam/Canal Alignment Validation
-                </span>
-                <span className="text-slate-600">14 / 20 Inspections (70%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div className="bg-nia-600 h-2.5 rounded-full transition-all" style={{ width: '70%' }} />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                <span>Measurement: Quantity (Site Inspection Reports with Geo-tagged photos)</span>
-                <span>Target: 20 Inspections</span>
-              </div>
-            </div>
-
-            {/* Target Item 4 (Zero Accomplishment alert) */}
-            <div className="pt-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
-                    C-05
-                  </span>
-                  Preparation of Annual Irrigation Program of Works (POW)
-                </span>
-                <span className="text-rose-600">0 / 4 Programs (0%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div className="bg-rose-500 h-2.5 rounded-full transition-all" style={{ width: '0%' }} />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                <span>Measurement: Quantity (Consolidated Section Program)</span>
-                <span className="text-rose-600 font-medium">No recorded activities yet</span>
-              </div>
-            </div>
+              return (
+                <div key={com.id} className="pt-3 first:pt-0">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-nia-700 bg-nia-50 px-1.5 py-0.5 rounded border border-nia-200">
+                        {com.commitmentCode}
+                      </span>
+                      <span className="truncate max-w-sm sm:max-w-md">{com.mfoPap}</span>
+                    </span>
+                    <span className={pct === 100 ? 'text-emerald-700 font-bold' : pct === 0 ? 'text-rose-600 font-bold' : 'text-slate-700 font-bold'}>
+                      {count} / {com.numericalTarget} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className={`h-2.5 rounded-full transition-all ${
+                        pct === 100 ? 'bg-emerald-600' : pct === 0 ? 'bg-rose-500' : 'bg-nia-600'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                    <span className="truncate max-w-xs">{com.target}</span>
+                    <span className={count === 0 ? 'text-rose-600 font-medium' : 'text-slate-500'}>
+                      {count === 0 ? 'No recorded accomplishments yet' : `${acts.length} verified logs`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
 
@@ -272,48 +260,53 @@ export const DashboardPage: React.FC = () => {
                 <CardTitle>Documents Pending Action</CardTitle>
                 <CardDescription>From DOC LOG SHEET requiring review</CardDescription>
               </div>
-              <span className="text-xs font-bold text-amber-600">5 Items</span>
+              <span className="text-xs font-bold text-amber-600">{pendingDocs.length} Items</span>
             </CardHeader>
-            <div className="p-4 space-y-3">
-              <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200 text-xs space-y-1">
-                <div className="flex items-center justify-between font-semibold text-slate-800">
-                  <span>Letter: Endorsement of POW</span>
-                  <Badge variant="amber" size="sm">Pending</Badge>
+            <div className="p-4 space-y-3 max-h-[340px] overflow-y-auto">
+              {pendingDocs.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-400">
+                  No pending documents in queue.
                 </div>
-                <p className="text-[11px] text-slate-600">Davao del Norte IMO • Digos RIS Canal Lining</p>
-                <div className="text-[10px] text-slate-400 pt-1 border-t border-amber-100 flex justify-between">
-                  <span>Rec: Nov 14, 2026</span>
-                  <span className="text-amber-800 font-medium">Action: Technical Review</span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-200 text-xs space-y-1">
-                <div className="flex items-center justify-between font-semibold text-slate-800">
-                  <span>Memo: Feasibility Study Submission</span>
-                  <Badge variant="blue" size="sm">On-going</Badge>
-                </div>
-                <p className="text-[11px] text-slate-600">Regional Manager Office • Padada River Dam Study</p>
-                <div className="text-[10px] text-slate-400 pt-1 border-t border-blue-100 flex justify-between">
-                  <span>Rec: Nov 11, 2026</span>
-                  <span className="text-blue-800 font-medium">Action: Review Hydraulic Calc</span>
-                </div>
-              </div>
+              ) : (
+                pendingDocs.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1 hover:border-nia-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between font-semibold text-slate-800">
+                      <span className="truncate max-w-[180px]">{doc.documentType}</span>
+                      <Badge variant={doc.status === 'On-going' ? 'blue' : 'amber'} size="sm">
+                        {doc.status}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-slate-600 line-clamp-1">{doc.description}</p>
+                    <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex justify-between">
+                      <span>Rec: {doc.dateReceived}</span>
+                      <span className="text-nia-800 font-medium">{doc.actionTaken.slice(0, 25)}...</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
 
           <Card padding="md" className="bg-gradient-to-br from-nia-900 to-slate-900 text-white">
             <h4 className="text-sm font-semibold text-white flex items-center gap-2">
               <FileCheck className="w-4 h-4 text-sky-400" />
-              Semiannual Report Status
+              Automated Report Engine
             </h4>
             <p className="text-xs text-slate-300 mt-2">
-              All daily activities encoded in this tracker are continually matched with IPCR targets.
-              Generate a snapshot report anytime.
+              All {totalCount} daily activities are mapped to IPCR commitments and ready for narrative synthesis and Excel/Word/PDF export.
             </p>
             <div className="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between">
-              <span className="text-xs text-sky-300 font-medium">2nd Sem Draft: Ready</span>
-              <Button size="sm" variant="primary" className="bg-sky-500 hover:bg-sky-600 text-xs">
-                Draft Report
+              <span className="text-xs text-sky-300 font-medium">Draft Ready</span>
+              <Button
+                size="sm"
+                variant="primary"
+                className="bg-sky-500 hover:bg-sky-600 text-xs text-white"
+                onClick={() => navigate('/reports')}
+              >
+                Open Report Generator
               </Button>
             </div>
           </Card>

@@ -88,3 +88,4 @@ npm run build
 2. **Backend-Enforced AI:** Gemini API keys are never bundled or called in client code; all requests are processed via Cloud Functions.
 3. **Data Integrity & Non-Destruction:** Soft-delete mechanisms prevent accidental loss. Historical records retain cell coordinates and immutable timestamps.
 4. **Philippine Civil Service Alignment:** Strictly complies with Civil Service Commission (CSC) IPCR guidelines and NIA Regional Office XI reporting standards.
+

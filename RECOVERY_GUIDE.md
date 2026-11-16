@@ -73,3 +73,4 @@ If the production Firestore database is compromised or dropped:
    gcloud firestore import gs://[PROJECT_ID]-backups/firestore/2026-11-16T02:00:00_daily --database=(default)
    ```
 2. Run sanity check on the **Dashboard** and **Accomplishment Monitoring** modules.
+

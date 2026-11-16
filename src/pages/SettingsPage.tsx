@@ -1,14 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Shield,
   Save,
   CheckCircle2,
+  RotateCcw,
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/common/Card';
+import { Card, CardHeader, CardTitle } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { useApp } from '@/contexts/AppContext';
 
 export const SettingsPage: React.FC = () => {
+  const { userProfile, updateUserProfile, resetToDefaults } = useApp();
+
+  const [fullName, setFullName] = useState(userProfile.fullName);
+  const [positionTitle, setPositionTitle] = useState(userProfile.positionTitle);
+  const [agency, setAgency] = useState(userProfile.agency);
+  const [regionalOffice, setRegionalOffice] = useState(userProfile.regionalOffice);
+  const [division, setDivision] = useState(userProfile.division);
+  const [section, setSection] = useState(userProfile.section);
+  const [supervisor, setSupervisor] = useState(userProfile.immediateSupervisor);
+  const [supervisorPosition, setSupervisorPosition] = useState(userProfile.supervisorPosition);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserProfile({
+      fullName,
+      positionTitle,
+      agency,
+      regionalOffice,
+      division,
+      section,
+      immediateSupervisor: supervisor,
+      supervisorPosition,
+    });
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -23,13 +53,27 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" leftIcon={<Save className="w-3.5 h-3.5" />}>
-            Save Preferences
+          {isSaved && (
+            <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+              <CheckCircle2 className="w-4 h-4" /> Preferences Saved!
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm('Reset profile and data back to standard NIA Region XI defaults?')) {
+                resetToDefaults();
+              }
+            }}
+            leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+          >
+            Reset Defaults
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* User Identity & NIA Office Context (2 Cols) */}
         <div className="md:col-span-2 space-y-6">
           <Card padding="md">
@@ -40,12 +84,24 @@ export const SettingsPage: React.FC = () => {
 
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Position Title</label>
+                <label className="block font-semibold text-slate-700 mb-1">Full Name *</label>
                 <input
                   type="text"
-                  readOnly
-                  value="Civil Engineer"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Position Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={positionTitle}
+                  onChange={(e) => setPositionTitle(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
                 />
               </div>
 
@@ -53,9 +109,9 @@ export const SettingsPage: React.FC = () => {
                 <label className="block font-semibold text-slate-700 mb-1">Agency Name</label>
                 <input
                   type="text"
-                  readOnly
-                  value="National Irrigation Administration (NIA)"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
+                  value={agency}
+                  onChange={(e) => setAgency(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
                 />
               </div>
 
@@ -63,9 +119,19 @@ export const SettingsPage: React.FC = () => {
                 <label className="block font-semibold text-slate-700 mb-1">Regional Office</label>
                 <input
                   type="text"
-                  readOnly
-                  value="Regional Office XI (Davao Region)"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
+                  value={regionalOffice}
+                  onChange={(e) => setRegionalOffice(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Division</label>
+                <input
+                  type="text"
+                  value={division}
+                  onChange={(e) => setDivision(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
                 />
               </div>
 
@@ -73,66 +139,37 @@ export const SettingsPage: React.FC = () => {
                 <label className="block font-semibold text-slate-700 mb-1">Operating Section</label>
                 <input
                   type="text"
-                  readOnly
-                  value="Planning and Design Section"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">Division</label>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Immediate Supervisor</label>
                 <input
                   type="text"
-                  readOnly
-                  value="Engineering and Operations Division"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
+                  value={supervisor}
+                  onChange={(e) => setSupervisor(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Supervisor Designation</label>
+                <input
+                  type="text"
+                  value={supervisorPosition}
+                  onChange={(e) => setSupervisorPosition(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 text-xs bg-white"
                 />
               </div>
             </div>
-          </Card>
 
-          <Card padding="md">
-            <CardHeader>
-              <CardTitle>Reporting Preferences</CardTitle>
-              <CardDescription>Default filters and operational standards</CardDescription>
-            </CardHeader>
-
-            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">System Timezone</label>
-                <input
-                  type="text"
-                  readOnly
-                  value="Asia/Manila (PHT, UTC+8)"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Date Format Standard</label>
-                <input
-                  type="text"
-                  readOnly
-                  value="Philippine Standard (dd/MM/yyyy & MMMM d, yyyy)"
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-800 px-3 py-2 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Default Reporting Cycle</label>
-                <select className="w-full rounded-lg border-slate-300 bg-white text-slate-800 px-3 py-2 text-xs">
-                  <option value="SEM2">2nd Semester (July - December)</option>
-                  <option value="SEM1">1st Semester (January - June)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Auto-Save Frequency</label>
-                <select className="w-full rounded-lg border-slate-300 bg-white text-slate-800 px-3 py-2 text-xs">
-                  <option value="30">Every 30 seconds</option>
-                  <option value="60">Every 1 minute</option>
-                </select>
-              </div>
+            <div className="p-4 border-t border-slate-100 flex justify-end">
+              <Button type="submit" variant="primary" size="sm" leftIcon={<Save className="w-3.5 h-3.5" />}>
+                Save Profile Changes
+              </Button>
             </div>
           </Card>
         </div>
@@ -145,7 +182,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-bold text-white">Security & Privacy</h3>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              This system is strictly architected for private single-user operation by the authorized Civil Engineer.
+              This system is strictly architected for private single-user operation by Engr. Sam Taguibao at NIA Regional Office XI.
             </p>
             <div className="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800 pt-3">
               <div className="flex items-center gap-2">
@@ -158,16 +195,16 @@ export const SettingsPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>No Client-Exposed API Keys</span>
+                <span>CSC Form 2017 Format Compliance</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>CSC IPCR Strict Formatting</span>
+                <span>Zero Exposure of API Secrets</span>
               </div>
             </div>
           </Card>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

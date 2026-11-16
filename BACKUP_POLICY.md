@@ -63,3 +63,4 @@ Direct permanent deletion of database records is strictly disabled at the applic
 2. **Schema & Header Verification:** Validate that the exported bundle contains parseable JSON matching the current `schemaVersion`.
 3. **Record Count Reconciliation:** Verify that the number of serialized records matches the active document count in Firestore at the moment of snapshot capture.
 4. If any check fails, the backup status is recorded as `FAILED`, an alert is displayed on the Dashboard, and the system refuses to proceed with destructive operations.
+

@@ -14,27 +14,26 @@ import {
   Droplets,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface NavItem {
-  name: string;
-  to: string;
-  icon: React.ElementType;
-  badge?: string;
-}
-
-const navItems: NavItem[] = [
-  { name: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { name: 'Daily Activities', to: '/activities', icon: CalendarCheck },
-  { name: 'Document Monitoring', to: '/documents', icon: FileSpreadsheet },
-  { name: 'IPCR Commitments', to: '/commitments', icon: Target },
-  { name: 'Accomplishment Monitoring', to: '/accomplishments', icon: Award },
-  { name: 'Report Generator', to: '/reports', icon: FileText },
-  { name: 'Import Data', to: '/import', icon: UploadCloud },
-  { name: 'Backup & Audit', to: '/backup', icon: ShieldCheck },
-  { name: 'Settings', to: '/settings', icon: Settings },
-];
+import { useApp } from '@/contexts/AppContext';
 
 export const Sidebar: React.FC = () => {
+  const { activities, documents } = useApp();
+
+  const activeActivitiesCount = activities.filter((a) => !a.isDeleted).length;
+  const pendingDocsCount = documents.filter((d) => !d.isDeleted && d.status === 'Pending').length;
+
+  const navItems = [
+    { name: 'Dashboard', to: '/', icon: LayoutDashboard },
+    { name: 'Daily Activities', to: '/activities', icon: CalendarCheck, badge: activeActivitiesCount > 0 ? String(activeActivitiesCount) : undefined },
+    { name: 'Document Monitoring', to: '/documents', icon: FileSpreadsheet, badge: pendingDocsCount > 0 ? String(pendingDocsCount) : undefined },
+    { name: 'IPCR Commitments', to: '/commitments', icon: Target },
+    { name: 'Accomplishment Monitoring', to: '/accomplishments', icon: Award },
+    { name: 'Report Generator', to: '/reports', icon: FileText },
+    { name: 'Import Data', to: '/import', icon: UploadCloud },
+    { name: 'Backup & Audit', to: '/backup', icon: ShieldCheck },
+    { name: 'Settings', to: '/settings', icon: Settings },
+  ];
+
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 select-none">
       {/* Brand Header */}
@@ -46,7 +45,7 @@ export const Sidebar: React.FC = () => {
           <span className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
             IPCR Tracker
             <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-nia-500/20 text-nia-400 border border-nia-500/30">
-              v0.1
+              v1.0
             </span>
           </span>
           <span className="text-[11px] text-slate-400 font-medium">NIA Regional Office XI</span>
@@ -113,17 +112,17 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Footer Info & Phase Status */}
+      {/* Footer Info & Operational Status */}
       <div className="p-3 border-t border-slate-800 bg-slate-950/30">
         <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Phase 0 Initialized
+            System Live & Ready
           </span>
           <span className="text-[10px] font-mono text-slate-500">PHT (UTC+8)</span>
         </div>
         <p className="text-[10px] text-slate-400 leading-tight">
-          Private single-user workspace. Standalone baseline verified.
+          Private single-user workspace. Automatic local & cloud recovery enabled.
         </p>
       </div>
     </aside>
