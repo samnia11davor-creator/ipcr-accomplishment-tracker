@@ -118,7 +118,22 @@ export type ActivityCategory =
   | 'Document Processing'
   | 'Meetings and Coordination'
   | 'Administrative'
-  | 'Other';
+  | 'REPORT'
+  | 'PRE-FSR'
+  | 'FSR'
+  | 'POW PRE-FSR'
+  | 'POW FS'
+  | 'POW DE'
+  | 'POW LARP'
+  | 'POW SEIA'
+  | 'MEMORANDUM'
+  | 'PIR'
+  | 'TOR'
+  | 'BILLING'
+  | 'ASA'
+  | 'MISC'
+  | 'Other'
+  | (string & {});
 
 export type ActivityStatus = 'DRAFT' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 export type ClassificationStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'MANUAL';

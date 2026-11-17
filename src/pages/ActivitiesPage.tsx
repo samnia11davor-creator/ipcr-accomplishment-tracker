@@ -18,37 +18,33 @@ import {
   RotateCcw,
   Building2,
   Layers,
+  PlusCircle,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { ActivityCategory, ActivityStatus, DailyActivity } from '@/types';
+import { ActivityStatus, DailyActivity } from '@/types';
 import { getCurrentManilaDateString } from '@/lib/dates';
 import { useApp } from '@/contexts/AppContext';
+import {
+  SHEET2_DOC_TYPES,
+  SHEET2_PROJECTS,
+  SHEET2_OFFICE_SOURCES,
+} from '@/data/sheet2MasterData';
 
-const CATEGORIES: ActivityCategory[] = [
+const BASE_CATEGORIES = [
+  'Detailed Engineering',
   'Technical Review',
   'Feasibility Study',
-  'Detailed Engineering',
-  'Project Planning',
   'Project Monitoring',
   'Field Inspection',
   'Report Preparation',
   'Report Consolidation',
+  'Project Planning',
   'Document Processing',
   'Meetings and Coordination',
   'Administrative',
   'Other',
-];
-
-// Document / File / Task Origin matching official NIA routing
-const STANDARD_OFFICE_SOURCES = [
-  'Central Office',
-  'Regional Office XI',
-  'Davao Oriental IMO',
-  'Davao del Norte IMO',
-  'Davao del Sur IMO',
-  'Others (Outside)',
 ];
 
 export const ActivitiesPage: React.FC = () => {
@@ -67,6 +63,20 @@ export const ActivitiesPage: React.FC = () => {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
+  // Dynamic Projects List (Initialized from Sheet2 of SAM DAILY LOG SHEET.xlsx + custom added)
+  const [projectList, setProjectList] = useState<string[]>(() => {
+    const saved = localStorage.getItem('ipcr_custom_projects');
+    const custom = saved ? JSON.parse(saved) : [];
+    return Array.from(new Set([...SHEET2_PROJECTS, ...custom])).sort();
+  });
+
+  // Dynamic Doc Types / Categories List (Initialized from Sheet2 of SAM DAILY LOG SHEET.xlsx + categories)
+  const [docTypeList, setDocTypeList] = useState<string[]>(() => {
+    const saved = localStorage.getItem('ipcr_custom_doctypes');
+    const custom = saved ? JSON.parse(saved) : [];
+    return Array.from(new Set([...SHEET2_DOC_TYPES, ...BASE_CATEGORIES, ...custom]));
+  });
+
   // Advanced Filtering matching DOC LOG SHEET headers
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string>('ALL');
@@ -83,8 +93,18 @@ export const ActivitiesPage: React.FC = () => {
   const [activityDate, setActivityDate] = useState<string>(getCurrentManilaDateString());
   const [description, setDescription] = useState<string>('');
   const [output, setOutput] = useState<string>('');
-  const [category, setCategory] = useState<ActivityCategory>('Detailed Engineering');
-  const [project, setProject] = useState<string>('Suawan SRIP');
+
+  // Project state with "+ Add New Project" support
+  const [selectedProject, setSelectedProject] = useState<string>('Suawan SRIP');
+  const [isCustomProject, setIsCustomProject] = useState(false);
+  const [customProjectInput, setCustomProjectInput] = useState('');
+
+  // Doc Type / Category state with "+ Add New Doc Type" support
+  const [selectedCategory, setSelectedCategory] = useState<string>('Detailed Engineering');
+  const [isCustomDocType, setIsCustomDocType] = useState(false);
+  const [customDocTypeInput, setCustomDocTypeInput] = useState('');
+
+  // Office / Origin state
   const [imoLocation, setImoLocation] = useState<string>('Central Office');
   const [outsideSender, setOutsideSender] = useState<string>('');
   const [calendarYear, setCalendarYear] = useState<number>(2026);
@@ -97,8 +117,12 @@ export const ActivitiesPage: React.FC = () => {
     setActivityDate(getCurrentManilaDateString());
     setDescription('');
     setOutput('');
-    setCategory('Detailed Engineering');
-    setProject('Suawan SRIP');
+    setSelectedProject('Suawan SRIP');
+    setIsCustomProject(false);
+    setCustomProjectInput('');
+    setSelectedCategory('Detailed Engineering');
+    setIsCustomDocType(false);
+    setCustomDocTypeInput('');
     setImoLocation('Central Office');
     setOutsideSender('');
     setCalendarYear(2026);
@@ -115,11 +139,39 @@ export const ActivitiesPage: React.FC = () => {
     setActivityDate(act.activityDate);
     setDescription(act.description);
     setOutput(act.output);
-    setCategory(act.category);
-    setProject(act.project || '');
 
-    // Check if location is standard or outside
-    if (act.imoLocation && STANDARD_OFFICE_SOURCES.includes(act.imoLocation)) {
+    // Project selection
+    if (act.project && projectList.includes(act.project)) {
+      setSelectedProject(act.project);
+      setIsCustomProject(false);
+      setCustomProjectInput('');
+    } else if (act.project) {
+      setSelectedProject('__ADD_NEW__');
+      setIsCustomProject(true);
+      setCustomProjectInput(act.project);
+    } else {
+      setSelectedProject('Suawan SRIP');
+      setIsCustomProject(false);
+      setCustomProjectInput('');
+    }
+
+    // Category / Doc Type selection
+    if (act.category && docTypeList.includes(act.category)) {
+      setSelectedCategory(act.category);
+      setIsCustomDocType(false);
+      setCustomDocTypeInput('');
+    } else if (act.category) {
+      setSelectedCategory('__ADD_NEW__');
+      setIsCustomDocType(true);
+      setCustomDocTypeInput(act.category);
+    } else {
+      setSelectedCategory('Detailed Engineering');
+      setIsCustomDocType(false);
+      setCustomDocTypeInput('');
+    }
+
+    // Origin / Source
+    if (act.imoLocation && SHEET2_OFFICE_SOURCES.includes(act.imoLocation as typeof SHEET2_OFFICE_SOURCES[number])) {
       setImoLocation(act.imoLocation);
       setOutsideSender('');
     } else if (act.imoLocation) {
@@ -162,6 +214,50 @@ export const ActivitiesPage: React.FC = () => {
       return;
     }
 
+    // Resolve Project Name
+    let finalProject = selectedProject;
+    if (selectedProject === '__ADD_NEW__') {
+      if (!customProjectInput.trim()) {
+        alert('Please enter the new project name or select an existing one.');
+        return;
+      }
+      finalProject = customProjectInput.trim();
+      // Add to dynamic list and persist
+      if (!projectList.includes(finalProject)) {
+        const updated = [...projectList, finalProject].sort();
+        setProjectList(updated);
+        localStorage.setItem(
+          'ipcr_custom_projects',
+          JSON.stringify(updated.filter((p) => !SHEET2_PROJECTS.includes(p)))
+        );
+      }
+    }
+
+    // Resolve Category / Doc Type
+    let finalCategory = selectedCategory;
+    if (selectedCategory === '__ADD_NEW__') {
+      if (!customDocTypeInput.trim()) {
+        alert('Please enter the new document type or category name.');
+        return;
+      }
+      finalCategory = customDocTypeInput.trim();
+      if (!docTypeList.includes(finalCategory)) {
+        const updated = [...docTypeList, finalCategory];
+        setDocTypeList(updated);
+        localStorage.setItem(
+          'ipcr_custom_doctypes',
+          JSON.stringify(
+            updated.filter(
+              (d) =>
+                !SHEET2_DOC_TYPES.includes(d as typeof SHEET2_DOC_TYPES[number]) &&
+                !BASE_CATEGORIES.includes(d)
+            )
+          )
+        );
+      }
+    }
+
+    // Resolve Office Origin
     const resolvedLocation =
       imoLocation === 'Others (Outside)' && outsideSender.trim()
         ? `Others (${outsideSender.trim()})`
@@ -175,8 +271,8 @@ export const ActivitiesPage: React.FC = () => {
           activityDate,
           description,
           output,
-          category,
-          project,
+          category: finalCategory,
+          project: finalProject,
           imoLocation: resolvedLocation,
           calendarYear,
           timeSpentHours: parseFloat(timeSpent) || 4.0,
@@ -190,8 +286,8 @@ export const ActivitiesPage: React.FC = () => {
         activityDate,
         description,
         output,
-        category,
-        project,
+        category: finalCategory,
+        project: finalProject,
         imoLocation: resolvedLocation,
         calendarYear,
         timeSpentHours: parseFloat(timeSpent) || 4.0,
@@ -207,12 +303,13 @@ export const ActivitiesPage: React.FC = () => {
   // Distinct filter options extracted from existing records
   const activeActivities = activities.filter((a) => !a.isDeleted);
 
-  const uniqueProjects = Array.from(
-    new Set(
-      activeActivities
+  const uniqueProjectsForFilter = Array.from(
+    new Set([
+      ...projectList,
+      ...activeActivities
         .map((a) => a.project)
-        .filter((p): p is string => Boolean(p && p.trim().length > 0))
-    )
+        .filter((p): p is string => Boolean(p && p.trim().length > 0)),
+    ])
   ).sort();
 
   const uniqueYears = Array.from(
@@ -343,11 +440,11 @@ export const ActivitiesPage: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
             Daily Activity Logsheet
             <Badge variant="blue" size="sm" className="font-normal font-sans">
-              DOC LOG Format
+              Sheet2 Verified
             </Badge>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Spreadsheet-grade daily work monitoring • Each recorded engineering task feeds into your active IPCR commitments
+            Spreadsheet-grade daily work monitoring • Preloaded with official NIA Region XI projects & doc types from your Sheet2 master list
           </p>
         </div>
 
@@ -432,7 +529,7 @@ export const ActivitiesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Spacious, Highly-Organized Log Entry Form */}
+      {/* Spacious, Highly-Organized Log Entry Form with Sheet2 Dropdowns */}
       {isFormOpen && (
         <Card padding="md" className="border-2 border-nia-600 shadow-xl rounded-2xl animate-in fade-in duration-200 bg-white">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -447,7 +544,7 @@ export const ActivitiesPage: React.FC = () => {
                     {editingActivityId ? 'Edit Daily Engineering Entry' : 'Record New Daily Engineering Work'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Specify where the file/task originates from (Central Office, IMO, or Outside) and map to your approved IPCR goal.
+                    Select from approved Sheet2 project names & doc types to prevent typing errors, or add new ones anytime.
                   </p>
                 </div>
               </div>
@@ -455,7 +552,7 @@ export const ActivitiesPage: React.FC = () => {
             </div>
 
             {/* SECTION 1: Origin & Project Details */}
-            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200 space-y-4">
+            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-200 space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
                 <Building2 className="w-4 h-4 text-nia-600" />
                 <span>1. Task Origin & Project Identification</span>
@@ -487,7 +584,7 @@ export const ActivitiesPage: React.FC = () => {
                     onChange={(e) => setImoLocation(e.target.value)}
                     className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm font-semibold text-slate-800"
                   >
-                    {STANDARD_OFFICE_SOURCES.map((src) => (
+                    {SHEET2_OFFICE_SOURCES.map((src) => (
                       <option key={src} value={src}>
                         {src}
                       </option>
@@ -495,20 +592,38 @@ export const ActivitiesPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Related Project */}
+                {/* Related Project (Sheet2 Dropdown + Add Option) */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                    <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
-                    Related Irrigation Project *
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
+                      Related Project *
+                    </span>
+                    <span className="text-[10px] text-nia-700 font-medium">Sheet2 Catalog</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={project}
-                    onChange={(e) => setProject(e.target.value)}
-                    placeholder="e.g. Suawan SRIP, Pagan SRIP, Mal River..."
-                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm"
-                  />
+                  <select
+                    value={isCustomProject ? '__ADD_NEW__' : selectedProject}
+                    onChange={(e) => {
+                      if (e.target.value === '__ADD_NEW__') {
+                        setIsCustomProject(true);
+                      } else {
+                        setIsCustomProject(false);
+                        setSelectedProject(e.target.value);
+                      }
+                    }}
+                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm font-medium text-slate-800"
+                  >
+                    <optgroup label="Official Region XI Projects">
+                      {projectList.map((proj) => (
+                        <option key={proj} value={proj}>
+                          {proj}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <option value="__ADD_NEW__" className="text-nia-700 font-bold">
+                      + Add New Project (Not in list)...
+                    </option>
+                  </select>
                 </div>
 
                 {/* Calendar Year */}
@@ -524,14 +639,46 @@ export const ActivitiesPage: React.FC = () => {
                     <option value={2026}>CY 2026</option>
                     <option value={2027}>CY 2027</option>
                     <option value={2025}>CY 2025</option>
+                    <option value={2024}>CY 2024</option>
+                    <option value={2023}>CY 2023</option>
                   </select>
                 </div>
 
+                {/* If Custom Project chosen, show animated text input */}
+                {isCustomProject && (
+                  <div className="sm:col-span-2 lg:col-span-4 bg-amber-50/80 p-3.5 rounded-xl border border-amber-300 animate-in fade-in space-y-1.5">
+                    <label className="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <PlusCircle className="w-3.5 h-3.5 text-amber-700" />
+                      Type New Project Name (Will be saved to your dropdown permanently) *
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={customProjectInput}
+                        onChange={(e) => setCustomProjectInput(e.target.value)}
+                        placeholder="e.g. New Irrigation System / Reservoir Project Name"
+                        className="w-full text-xs rounded-xl border border-amber-300 bg-white px-3.5 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomProject(false);
+                          setSelectedProject(projectList[0] || 'Suawan SRIP');
+                        }}
+                        className="px-3 py-2 text-xs font-semibold bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* If "Others (Outside)" selected, show specific agency input */}
                 {imoLocation === 'Others (Outside)' && (
-                  <div className="sm:col-span-2 lg:col-span-4 animate-in fade-in">
-                    <label className="block text-xs font-bold text-amber-900 mb-1">
-                      Specify Outside Agency / Entity Name (e.g. LGU Mati, Provincial Gov, Consultant) *
+                  <div className="sm:col-span-2 lg:col-span-4 bg-purple-50/80 p-3.5 rounded-xl border border-purple-200 animate-in fade-in space-y-1.5">
+                    <label className="block text-xs font-bold text-purple-900">
+                      Specify Outside Agency / Entity Name (e.g. LGU Mati, Provincial Agriculture Office, Consultant) *
                     </label>
                     <input
                       type="text"
@@ -539,7 +686,7 @@ export const ActivitiesPage: React.FC = () => {
                       value={outsideSender}
                       onChange={(e) => setOutsideSender(e.target.value)}
                       placeholder="e.g. Provincial Agriculture Office, Woodfields Consultants, LGU Bansalan..."
-                      className="w-full text-xs rounded-xl border border-amber-300 bg-amber-50/50 px-3.5 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                      className="w-full text-xs rounded-xl border border-purple-300 bg-white px-3.5 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                     />
                   </div>
                 )}
@@ -547,28 +694,48 @@ export const ActivitiesPage: React.FC = () => {
             </div>
 
             {/* SECTION 2: Category & IPCR Target Goal */}
-            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200 space-y-4">
+            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-200 space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
                 <Layers className="w-4 h-4 text-nia-600" />
                 <span>2. Engineering Scope & IPCR Goal Target</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Category */}
+                {/* Doc Type / Category (Sheet2 Dropdown + Add Option) */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Activity Category / Doc Type *
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Doc Type / Category *</span>
+                    <span className="text-[10px] text-nia-700 font-medium">Sheet2 Types</span>
                   </label>
                   <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as ActivityCategory)}
-                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm"
+                    value={isCustomDocType ? '__ADD_NEW__' : selectedCategory}
+                    onChange={(e) => {
+                      if (e.target.value === '__ADD_NEW__') {
+                        setIsCustomDocType(true);
+                      } else {
+                        setIsCustomDocType(false);
+                        setSelectedCategory(e.target.value);
+                      }
+                    }}
+                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm font-medium text-slate-800"
                   >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                    <optgroup label="Official Sheet2 Document Types">
+                      {SHEET2_DOC_TYPES.map((dt) => (
+                        <option key={dt} value={dt}>
+                          {dt}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Engineering Activity Categories">
+                      {BASE_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <option value="__ADD_NEW__" className="text-nia-700 font-bold">
+                      + Add Custom Doc Type / Category...
+                    </option>
                   </select>
                 </div>
 
@@ -623,6 +790,36 @@ export const ActivitiesPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* If Custom Doc Type chosen, show input */}
+                {isCustomDocType && (
+                  <div className="sm:col-span-2 lg:col-span-4 bg-blue-50/80 p-3.5 rounded-xl border border-blue-300 animate-in fade-in space-y-1.5">
+                    <label className="block text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                      <PlusCircle className="w-3.5 h-3.5 text-blue-700" />
+                      Type Custom Document Type or Category *
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={customDocTypeInput}
+                        onChange={(e) => setCustomDocTypeInput(e.target.value)}
+                        placeholder="e.g. SPECIAL ORDER, DED ENDORSEMENT"
+                        className="w-full text-xs rounded-xl border border-blue-300 bg-white px-3.5 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomDocType(false);
+                          setSelectedCategory('Detailed Engineering');
+                        }}
+                        className="px-3 py-2 text-xs font-semibold bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -725,20 +922,20 @@ export const ActivitiesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Balanced 4-Column Dropdown Grid with generous spacing and zero empty whitespace */}
+        {/* Balanced 4-Column Dropdown Grid with generous spacing and Sheet2 selections */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
           {/* 1. Project Filter */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Project Name
+              Project Name ({uniqueProjectsForFilter.length})
             </label>
             <select
               value={filterProject}
               onChange={(e) => setFilterProject(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
             >
-              <option value="ALL">All Projects ({uniqueProjects.length})</option>
-              {uniqueProjects.map((proj) => (
+              <option value="ALL">All Projects ({uniqueProjectsForFilter.length})</option>
+              {uniqueProjectsForFilter.map((proj) => (
                 <option key={proj} value={proj}>
                   {proj}
                 </option>
@@ -746,7 +943,7 @@ export const ActivitiesPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 2. Source / Office Origin (Central Office, IMOs, Outside) */}
+          {/* 2. Source / Office Origin */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
               Source / Office Origin
@@ -757,31 +954,39 @@ export const ActivitiesPage: React.FC = () => {
               className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
             >
               <option value="ALL">All Sources & Offices</option>
-              <option value="Central Office">Central Office</option>
-              <option value="Regional Office XI">Regional Office XI</option>
-              <option value="Davao Oriental IMO">Davao Oriental IMO</option>
-              <option value="Davao del Norte IMO">Davao del Norte IMO</option>
-              <option value="Davao del Sur IMO">Davao del Sur IMO</option>
-              <option value="Others (Outside)">Others (Outside)</option>
+              {SHEET2_OFFICE_SOURCES.map((src) => (
+                <option key={src} value={src}>
+                  {src}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* 3. Category / Doc Type */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Activity Category
+              Category / Doc Type
             </label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
             >
-              <option value="ALL">All Categories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              <option value="ALL">All Categories & Doc Types</option>
+              <optgroup label="Official Sheet2 Doc Types">
+                {SHEET2_DOC_TYPES.map((dt) => (
+                  <option key={dt} value={dt}>
+                    {dt}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Engineering Categories">
+                {BASE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -861,7 +1066,7 @@ export const ActivitiesPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 8. Custom Date Pickers (Shown if 'CUSTOM' duration is chosen, or empty placeholder) */}
+          {/* 8. Custom Date Pickers */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
               {dateRangePreset === 'CUSTOM' ? 'Custom Range (From - To)' : 'Date Mode'}
@@ -931,7 +1136,6 @@ export const ActivitiesPage: React.FC = () => {
                         ? 'III'
                         : '';
 
-                    // Badge color for office origin
                     const isCentralOffice = act.imoLocation?.includes('Central Office');
                     const isOutside = act.imoLocation?.includes('Others');
 
