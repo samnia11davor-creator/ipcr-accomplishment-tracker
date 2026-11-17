@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useApp } from '@/contexts/AppContext';
+import { StorageMonitorPill } from '../common/StorageMonitorPill';
 
 export const Sidebar: React.FC = () => {
   const { activities, documents } = useApp();
@@ -113,8 +114,11 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Footer Info & Operational Status */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/30">
-        <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+      <div className="p-3 border-t border-slate-800 bg-slate-950/30 space-y-2.5">
+        {/* Real-time Free Tier Memory Monitor */}
+        <StorageMonitorPill variant="sidebar" />
+
+        <div className="flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             System Live & Ready

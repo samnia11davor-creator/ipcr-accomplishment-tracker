@@ -9,11 +9,12 @@ import {
   Building2,
   FileText,
   PlusCircle,
+  Paperclip,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { DocumentStatus, DocumentRecord } from '@/types';
+import { DocumentStatus, DocumentRecord, TaskAttachment } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { getCurrentManilaDateString } from '@/lib/dates';
 import {
@@ -22,6 +23,9 @@ import {
   SHEET2_OFFICE_SOURCES,
   SHEET2_STUDY_TYPES,
 } from '@/data/sheet2MasterData';
+import { AttachmentDropzone } from '@/components/common/AttachmentDropzone';
+import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
+import { StorageMonitorPill } from '@/components/common/StorageMonitorPill';
 
 export const DocumentsPage: React.FC = () => {
   const { documents, addDocument, updateDocument, deleteDocument } = useApp();
@@ -70,6 +74,10 @@ export const DocumentsPage: React.FC = () => {
   const [status, setStatus] = useState<DocumentStatus>('Pending');
   const [remarks, setRemarks] = useState('');
 
+  // Attachments state
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [viewingAttachment, setViewingAttachment] = useState<TaskAttachment | null>(null);
+
   const resetForm = () => {
     setSelectedDocType('REPORT');
     setIsCustomDocType(false);
@@ -88,6 +96,7 @@ export const DocumentsPage: React.FC = () => {
     setActionTaken('');
     setStatus('Pending');
     setRemarks('');
+    setAttachments([]);
     setEditingDocId(null);
     setIsFormOpen(false);
   };
@@ -135,6 +144,7 @@ export const DocumentsPage: React.FC = () => {
     setActionTaken(doc.actionTaken);
     setStatus(doc.status);
     setRemarks(doc.remarks || '');
+    setAttachments(doc.attachments || []);
     setIsFormOpen(true);
   };
 
@@ -214,6 +224,7 @@ export const DocumentsPage: React.FC = () => {
           actionTaken,
           status,
           remarks,
+          attachments,
         });
       }
     } else {
@@ -231,6 +242,7 @@ export const DocumentsPage: React.FC = () => {
         actionTaken,
         status,
         remarks,
+        attachments,
       });
     }
 
@@ -262,7 +274,8 @@ export const DocumentsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <StorageMonitorPill variant="compact" />
           <Button
             variant="primary"
             size="sm"
@@ -575,6 +588,18 @@ export const DocumentsPage: React.FC = () => {
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white"
                 />
               </div>
+
+              {/* Scanned Copy / Attachment */}
+              <div className="md:col-span-3 bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                <label className="block text-xs font-bold text-slate-800">
+                  Scanned Copy / Supporting Attachment (PDF, Photo, Word, Excel)
+                </label>
+                <AttachmentDropzone
+                  attachments={attachments}
+                  onChange={setAttachments}
+                  maxFiles={4}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2.5 mt-4 pt-3 border-t border-slate-200">
@@ -628,6 +653,7 @@ export const DocumentsPage: React.FC = () => {
               <th className="table-th">Sender / Project</th>
               <th className="table-th">Dates</th>
               <th className="table-th">Action Taken</th>
+              <th className="table-th text-center">Files</th>
               <th className="table-th">Status</th>
               <th className="table-th text-center">Actions</th>
             </tr>
@@ -635,7 +661,7 @@ export const DocumentsPage: React.FC = () => {
           <tbody className="divide-y divide-slate-100">
             {filteredDocs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-xs text-slate-400">
+                <td colSpan={8} className="text-center py-8 text-xs text-slate-400">
                   No documents found matching criteria.
                 </td>
               </tr>
@@ -675,6 +701,23 @@ export const DocumentsPage: React.FC = () => {
                     <div className="text-xs text-slate-800">{doc.actionTaken}</div>
                     {doc.remarks && (
                       <div className="text-[10px] text-slate-400 italic mt-0.5">Remarks: {doc.remarks}</div>
+                    )}
+                  </td>
+
+                  {/* Files / Attachments */}
+                  <td className="table-td text-center">
+                    {doc.attachments && doc.attachments.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setViewingAttachment(doc.attachments![0])}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold hover:bg-purple-100 transition-colors shadow-xs"
+                        title={`${doc.attachments.length} attachment(s) • Click to view`}
+                      >
+                        <Paperclip className="w-3 h-3 text-purple-600" />
+                        <span>{doc.attachments.length}</span>
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-300 font-mono">—</span>
                     )}
                   </td>
 
@@ -726,6 +769,23 @@ export const DocumentsPage: React.FC = () => {
           </tbody>
         </table>
       </Card>
+
+      {/* Attachment Viewer / Lightbox Modal */}
+      {viewingAttachment && (
+        <AttachmentViewerModal
+          attachment={viewingAttachment}
+          onClose={() => setViewingAttachment(null)}
+          onDelete={(id) => {
+            const parentDoc = documents.find((d) =>
+              (d.attachments || []).some((att) => att.id === id)
+            );
+            if (parentDoc) {
+              const updated = (parentDoc.attachments || []).filter((a) => a.id !== id);
+              updateDocument({ ...parentDoc, attachments: updated });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

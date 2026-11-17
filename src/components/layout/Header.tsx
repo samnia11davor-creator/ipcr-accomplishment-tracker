@@ -3,6 +3,7 @@ import { Clock, HardDrive, CheckCircle2 } from 'lucide-react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { MANILA_TZ } from '@/lib/dates';
 import { Badge } from '../common/Badge';
+import { StorageMonitorPill } from '../common/StorageMonitorPill';
 import { useApp } from '@/contexts/AppContext';
 
 export const Header: React.FC = () => {
@@ -39,6 +40,9 @@ export const Header: React.FC = () => {
 
       {/* Right: User Profile & Security Status */}
       <div className="flex items-center gap-3">
+        {/* Free Tier Storage Memory Monitor Pill */}
+        <StorageMonitorPill variant="compact" />
+
         {/* Local-First & Cloud Ready Indicator */}
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />

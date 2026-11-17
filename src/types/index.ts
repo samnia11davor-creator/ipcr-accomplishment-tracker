@@ -152,6 +152,16 @@ export interface AiClassificationSuggestion {
   modelUsed: string;
 }
 
+export interface TaskAttachment {
+  id: string;
+  fileName: string;
+  fileSize: number;                // in bytes
+  fileType: string;                // e.g. "image/png", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  uploadedAt: string;              // ISO timestamp
+  thumbnailUrl?: string;           // Small preview dataUrl (for images)
+  storageKey?: string;             // IndexedDB lookup key
+}
+
 export interface DailyActivity extends BaseEntity {
   cycleId: string;
   activityDate: string;            // YYYY-MM-DD (Asia/Manila)
@@ -173,6 +183,7 @@ export interface DailyActivity extends BaseEntity {
   isHistorical: boolean;
   sourceSheet?: string;
   supportingDocumentCount?: number;
+  attachments?: TaskAttachment[];  // Photos, PDFs, Word, Excel files
 }
 
 // ---------------------------------------------------------------------------
@@ -208,6 +219,7 @@ export interface DocumentRecord extends BaseEntity {
   documentLink?: string;
   isHistorical: boolean;
   sourceSheet?: string;
+  attachments?: TaskAttachment[];
 }
 
 // ---------------------------------------------------------------------------
