@@ -26,6 +26,12 @@ interface AppContextType {
   selectedPeriod: string;
   setSelectedPeriod: (period: string) => void;
 
+  // Commitments Management
+  addCommitment: (commitmentData: Partial<IpcrCommitment>) => IpcrCommitment;
+  updateCommitment: (commitment: IpcrCommitment) => void;
+  deleteCommitment: (id: string) => void;
+  saveCycleCommitments: (newCommitments: IpcrCommitment[]) => void;
+
   // Activities CRUD
   addActivity: (activityData: Partial<DailyActivity>) => DailyActivity;
   updateActivity: (activity: DailyActivity) => void;
@@ -123,6 +129,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateUserProfile = (updated: Partial<UserProfile>) => {
     setUserProfile((prev) => ({ ...prev, ...updated, updatedAt: new Date().toISOString() }));
     addAuditLog('USER_LOGIN', 'users', { updatedFields: Object.keys(updated) });
+  };
+
+  // Commitments Management
+  const addCommitment = (data: Partial<IpcrCommitment>): IpcrCommitment => {
+    const id = data.id || `com-${Date.now()}`;
+    const now = new Date().toISOString();
+    const newCommitment: IpcrCommitment = {
+      id,
+      ownerUid: userProfile.ownerUid,
+      cycleId: data.cycleId || `cycle-2026-${selectedPeriod.toLowerCase()}`,
+      tier: data.tier || 'STRATEGIC',
+      themeCategory: data.themeCategory || 'SUSTAINABLE IRRIGATION DEVELOPMENT AND SYSTEM MANAGEMENT',
+      strategicObjective: data.strategicObjective || '',
+      mfoPap: data.mfoPap || '',
+      commitmentCode: data.commitmentCode || `CUSTOM-${Date.now().toString().slice(-4)}`,
+      successIndicator: data.successIndicator || '',
+      target: data.target || data.successIndicator || '',
+      numericalTarget: data.numericalTarget ?? 1,
+      measurementType: data.measurementType || 'Count',
+      allottedBudget: data.allottedBudget ?? null,
+      accountableDivision: data.accountableDivision || `${userProfile.section} / ${userProfile.positionTitle}`,
+      actualAccomplishmentDraft: data.actualAccomplishmentDraft || '',
+      sourceWorkbook: data.sourceWorkbook || 'IPCR Semester Setup',
+      sourceCellRef: data.sourceCellRef || 'N/A',
+      rating: data.rating || { q: 5, e: 5, t: 5, average: 5.0 },
+      isActive: true,
+      sortOrder: data.sortOrder ?? (commitments.length + 1),
+      createdAt: now,
+      updatedAt: now,
+      schemaVersion: 1,
+      isDeleted: false,
+    };
+
+    setCommitments((prev) => [...prev, newCommitment]);
+    addAuditLog('REPORT_GENERATED', 'commitments', { id, code: newCommitment.commitmentCode });
+    return newCommitment;
+  };
+
+  const updateCommitment = (commitment: IpcrCommitment) => {
+    const updated = { ...commitment, updatedAt: new Date().toISOString() };
+    setCommitments((prev) => prev.map((c) => (c.id === commitment.id ? updated : c)));
+    addAuditLog('REPORT_GENERATED', 'commitments', { id: commitment.id, action: 'COMMITMENT_UPDATED' });
+  };
+
+  const deleteCommitment = (id: string) => {
+    setCommitments((prev) => prev.filter((c) => c.id !== id));
+    addAuditLog('REPORT_GENERATED', 'commitments', { id, action: 'COMMITMENT_REMOVED' });
+  };
+
+  const saveCycleCommitments = (newCommitments: IpcrCommitment[]) => {
+    setCommitments(newCommitments);
+    addAuditLog('REPORT_GENERATED', 'commitments', {
+      action: 'CYCLE_COMMITMENTS_SET',
+      period: selectedPeriod,
+      count: newCommitments.length,
+    });
   };
 
   // Activities CRUD
@@ -383,6 +445,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         auditLogs,
         selectedPeriod,
         setSelectedPeriod,
+        addCommitment,
+        updateCommitment,
+        deleteCommitment,
+        saveCycleCommitments,
         addActivity,
         updateActivity,
         deleteActivity,
@@ -411,3 +477,4 @@ export const useApp = () => {
   }
   return context;
 };
+

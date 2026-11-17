@@ -1,6 +1,7 @@
 // ============================================================================
 // IPCR Accomplishment Tracker - Domain Type Definitions
 // National Irrigation Administration (NIA) - Regional Office XI
+// Form: NIAROXI-AFD-Admin-INT-Form13Rev00 (SPMS IPCR)
 // ============================================================================
 
 export type PhilippineTimezone = 'Asia/Manila';
@@ -23,14 +24,17 @@ export interface BaseEntity {
 // ---------------------------------------------------------------------------
 export interface UserProfile extends BaseEntity {
   email: string;
-  fullName: string;
-  positionTitle: string;
-  agency: string;
-  regionalOffice: string;
-  division: string;
-  section: string;
-  immediateSupervisor: string;
-  supervisorPosition: string;
+  fullName: string;                // e.g. "ENGR. SAM LESTER R. TAGUIBAO"
+  positionTitle: string;           // "Civil Engineer"
+  agency: string;                  // "NATIONAL IRRIGATION ADMINISTRATION"
+  regionalOffice: string;          // "REGIONAL OFFICE XI"
+  division: string;                // "ENGINEERING AND OPERATIONS DIVISION"
+  section: string;                 // "Planning and Design Section"
+  headOfDivision: string;          // "ENGR. AL TED D. ABBOT"
+  headOfOffice: string;            // "ENGR. DEXTER A. SABLAON"
+  immediateSupervisor?: string;
+  supervisorPosition?: string;
+  formCode: string;                // "NIAROXI-AFD-Admin-INT-Form13Rev00"
   timezone: PhilippineTimezone;
   preferences: {
     defaultReportingPeriod: ReportingPeriod;
@@ -48,17 +52,19 @@ export type CycleStatus = 'DRAFT' | 'ACTIVE' | 'CONCLUDED' | 'ARCHIVED';
 export interface IpcrCycle extends BaseEntity {
   year: number;
   cycleType: 'SEM1' | 'SEM2' | 'ANNUAL';
-  title: string;
-  startDate: string;       // YYYY-MM-DD
-  endDate: string;         // YYYY-MM-DD
+  title: string;                   // "July to Dec, 2026"
+  startDate: string;               // "2026-07-01"
+  endDate: string;                 // "2026-12-31"
   status: CycleStatus;
   totalCommitments: number;
   sourceWorkbookName?: string;
 }
 
 // ---------------------------------------------------------------------------
-// 3. IPCR Commitment
+// 3. IPCR Commitment (Structured by SPMS Tiers)
 // ---------------------------------------------------------------------------
+export type SpmsTier = 'STRATEGIC' | 'CORE' | 'SUPPORT';
+
 export type MeasurementType =
   | 'Count'
   | 'Quantity'
@@ -68,25 +74,37 @@ export type MeasurementType =
   | 'Milestone'
   | 'Qualitative output';
 
+export interface SpmsRating {
+  q: number; // Q1 - Quantity
+  e: number; // E2 - Efficiency
+  t: number; // T3 - Timeliness
+  average: number; // A4 - Average
+}
+
 export interface IpcrCommitment extends BaseEntity {
   cycleId: string;
-  mfoPap: string;
-  commitmentCode: string;
-  successIndicator: string;
-  target: string;
+  tier: SpmsTier;                  // Strategic, Core, or Support
+  themeCategory?: string;          // e.g. "SUSTAINABLE IRRIGATION DEVELOPMENT AND SYSTEM MANAGEMENT"
+  strategicObjective?: string;     // e.g. "STRATEGIC OBJECTIVE 3. IMPROVE PLANNING, DESIGN..."
+  mfoPap: string;                  // e.g. "SM7. FEASIBILITY STUDIES AND DETAILED ENGINEERING"
+  commitmentCode: string;          // e.g. "SM7-A", "SM7-POW", "CF2M8", "CF2M9", "SF4-A1", "SF4-A2", "SF4-B"
+  successIndicator: string;        // Official success indicator / (TARGETS + MEASURES)
+  target: string;                  // Target summary
   numericalTarget: number | null;
   measurementType: MeasurementType;
   allottedBudget: number | null;
   accountableDivision: string;
-  actualAccomplishmentDraft: string;
+  actualAccomplishmentDraft: string; // Accumulated / formatted narrative text
   sourceWorkbook: string;
-  sourceCellRef: string;   // e.g. "G14:H14"
+  sourceCellRef: string;
+  rating?: SpmsRating;
+  remarks?: string;
   isActive: boolean;
   sortOrder: number;
 }
 
 // ---------------------------------------------------------------------------
-// 4. Daily Activities
+// 4. Daily Activities (Feed/Supply to IPCR commitments)
 // ---------------------------------------------------------------------------
 export type ActivityCategory =
   | 'Technical Review'
@@ -107,7 +125,7 @@ export type ClassificationStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'MANUA
 
 export interface AiClassificationSuggestion {
   suggestedCommitmentId: string;
-  confidenceScore: number; // 0 to 1
+  confidenceScore: number;
   rationale: string;
   alternativeSuggestions: Array<{
     commitmentId: string;
@@ -121,16 +139,17 @@ export interface AiClassificationSuggestion {
 
 export interface DailyActivity extends BaseEntity {
   cycleId: string;
-  activityDate: string;    // YYYY-MM-DD (Asia/Manila)
+  activityDate: string;            // YYYY-MM-DD (Asia/Manila)
   description: string;
   output: string;
   category: ActivityCategory;
   projectId?: string;
   projectName?: string;
-  project?: string;
+  project?: string;                // Specific Irrigation System name (e.g. "Pagan SRIP", "Lupon IS")
+  imoLocation?: string;            // "Davao Oriental IMO", "Davao del Norte IMO", "Davao del Sur IMO"
   timeSpentHours?: number;
   status: ActivityStatus;
-  commitmentId?: string;
+  commitmentId?: string;           // The target commitment supplied by this activity
   classificationStatus: ClassificationStatus;
   aiClassification?: AiClassificationSuggestion;
   remarks?: string;
@@ -151,18 +170,18 @@ export type DocumentStatus =
 
 export interface DocumentRecord extends BaseEntity {
   type: string;                    // Incoming / Outgoing / Internal
-  documentType: string;            // e.g. Special Order, Memorandum, POW, Letter
+  documentType: string;            // Letter, POW, Special Order, Memorandum, FSR
   meansOfTransmission: string;     // Courier, Email, Hand Carried, DMS
   description: string;
-  fileDetail: string;              // Folder / physical file code or digital filename
+  fileDetail: string;              // Ref code / filename
   dateReceivedByUser: string;      // YYYY-MM-DD
   senderSource: string;
   projectId?: string;
   projectName?: string;
   project?: string;
-  typeOfStudy?: string;            // Feasibility Study, Detailed Engineering, etc.
+  typeOfStudy?: string;
   calendarYear: number;
-  dateReceived: string;            // Officially stamped date
+  dateReceived: string;
   actionTaken: string;
   dateProcessed?: string;
   status: DocumentStatus;
@@ -185,57 +204,7 @@ export interface ActivityDocumentLink extends BaseEntity {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Projects
-// ---------------------------------------------------------------------------
-export interface IrrigationProject extends BaseEntity {
-  projectName: string;
-  projectType: 'NIS' | 'CIS' | 'SWIP' | 'STUDY' | 'SPECIAL_PROJECT';
-  locationProvince: string;
-  locationMunicipality: string;
-  serviceAreaHectares?: number;
-  status: 'PROPOSED' | 'UNDER_STUDY' | 'DETAILED_DESIGN' | 'ONGOING' | 'COMPLETED';
-  calendarYear: number;
-}
-
-// ---------------------------------------------------------------------------
-// 8. Accomplishment Reports
-// ---------------------------------------------------------------------------
-export type ReportStatus = 'DRAFT' | 'REVIEWED' | 'APPROVED' | 'EXPORTED';
-
-export interface ReportCommitmentNarrative {
-  commitmentId: string;
-  commitmentCode: string;
-  mfoPap: string;
-  successIndicator: string;
-  target: string;
-  measurementType: MeasurementType;
-  actualAccomplishmentText: string;
-  quantitiesCount: number;
-  activitiesCount: number;
-  supportingDocuments: string[];
-  isApprovedByUser: boolean;
-  userEditedNarrative?: string;
-}
-
-export interface ReportRun extends BaseEntity {
-  cycleId: string;
-  reportingPeriod: ReportingPeriod;
-  periodStartDate: string;
-  periodEndDate: string;
-  versionNumber: number;
-  status: ReportStatus;
-  generatedDate: string;
-  sourceActivityIds: string[];
-  commitmentsSummary: Record<string, ReportCommitmentNarrative>;
-  exportArtifacts?: {
-    excelPath?: string;
-    wordPath?: string;
-    pdfPath?: string;
-  };
-}
-
-// ---------------------------------------------------------------------------
-// 9. Audit Logs & Backup
+// 7. Audit & Backup
 // ---------------------------------------------------------------------------
 export type AuditActionType =
   | 'USER_LOGIN'
@@ -263,13 +232,4 @@ export interface AuditLogEntry {
   userAgent?: string;
   timestamp: string;
   schemaVersion: number;
-}
-
-export interface BackupRun extends BaseEntity {
-  backupType: 'AUTOMATED_DAILY' | 'MANUAL_PRE_IMPORT' | 'ON_DEMAND';
-  status: 'SUCCESS' | 'FAILED' | 'VERIFIED';
-  storageBucketUri: string;
-  totalRecordsCount: number;
-  verifiedAt?: string;
-  verificationNotes?: string;
 }
