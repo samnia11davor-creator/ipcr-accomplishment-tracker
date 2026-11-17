@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ActivitiesPage } from '@/pages/ActivitiesPage';
+import { CalendarPage } from '@/pages/CalendarPage';
 import { DocumentsPage } from '@/pages/DocumentsPage';
 import { CommitmentsPage } from '@/pages/CommitmentsPage';
 import { AccomplishmentPage } from '@/pages/AccomplishmentPage';
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="activities" element={<ActivitiesPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="commitments" element={<CommitmentsPage />} />
           <Route path="accomplishments" element={<AccomplishmentPage />} />

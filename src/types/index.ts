@@ -184,6 +184,13 @@ export interface DailyActivity extends BaseEntity {
   sourceSheet?: string;
   supportingDocumentCount?: number;
   attachments?: TaskAttachment[];  // Photos, PDFs, Word, Excel files
+
+  // Field Work specific properties (SM7 Submit Program of Works)
+  isFieldWork?: boolean;           // True if conducted on-site / in the field (SM7 POW)
+  fieldWorkCount?: number;         // Count of field works/site visits (default 1)
+  fieldWorkType?: string;          // e.g. "Site Inspection", "Field Validation for POW", "Survey Check"
+  siteLocation?: string;           // Specific barangay / river / dam site / stationing
+  jointWith?: string;              // e.g. "Provincial Agri, IMO Engineers, IA officers"
 }
 
 // ---------------------------------------------------------------------------

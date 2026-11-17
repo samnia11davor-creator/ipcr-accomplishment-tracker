@@ -657,7 +657,13 @@ export const DashboardPage: React.FC = () => {
                 const ongoingActivities = activeActivities.filter(
                   (a) => a.commitmentId === com.id && a.status === 'ONGOING'
                 );
-                const count = matchedActivities.length;
+                const docMatches = matchedActivities.filter((a) => !a.isFieldWork);
+                const fieldMatches = matchedActivities.filter((a) => a.isFieldWork);
+                const fieldWorkUnits = fieldMatches.reduce(
+                  (acc, a) => acc + (a.fieldWorkCount || 1),
+                  0
+                );
+                const count = docMatches.length + fieldWorkUnits;
                 const targetNum = com.numericalTarget || 1;
                 const pct = Math.min(100, Math.round((count / targetNum) * 100));
                 const isExpanded = expandedCommitmentId === com.id;
@@ -696,17 +702,24 @@ export const DashboardPage: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        <span
-                          className={`font-mono text-xs font-bold ${
-                            pct === 100
-                              ? 'text-emerald-700'
-                              : pct === 0
-                              ? 'text-rose-600'
-                              : 'text-nia-700'
-                          }`}
-                        >
-                          {count} / {com.numericalTarget} ({pct}%)
-                        </span>
+                        <div className="text-right">
+                          <span
+                            className={`font-mono text-xs font-bold ${
+                              pct === 100
+                                ? 'text-emerald-700'
+                                : pct === 0
+                                ? 'text-rose-600'
+                                : 'text-nia-700'
+                            }`}
+                          >
+                            {count} / {com.numericalTarget} ({pct}%)
+                          </span>
+                          {fieldWorkUnits > 0 && (
+                            <div className="text-[10px] text-emerald-700 font-bold">
+                              {docMatches.length} docs + {fieldWorkUnits} field
+                            </div>
+                          )}
+                        </div>
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-slate-400" />
                         ) : (

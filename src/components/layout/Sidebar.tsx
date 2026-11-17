@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   CalendarCheck,
+  Calendar,
   FileSpreadsheet,
   Target,
   Award,
@@ -21,11 +22,13 @@ export const Sidebar: React.FC = () => {
   const { activities, documents } = useApp();
 
   const activeActivitiesCount = activities.filter((a) => !a.isDeleted).length;
+  const fieldWorksCount = activities.filter((a) => !a.isDeleted && a.isFieldWork).length;
   const pendingDocsCount = documents.filter((d) => !d.isDeleted && d.status === 'Pending').length;
 
   const navItems = [
     { name: 'Dashboard', to: '/', icon: LayoutDashboard },
     { name: 'Daily Activities', to: '/activities', icon: CalendarCheck, badge: activeActivitiesCount > 0 ? String(activeActivitiesCount) : undefined },
+    { name: 'Calendar & Field Work', to: '/calendar', icon: Calendar, badge: fieldWorksCount > 0 ? `${fieldWorksCount} FW` : undefined },
     { name: 'Document Monitoring', to: '/documents', icon: FileSpreadsheet, badge: pendingDocsCount > 0 ? String(pendingDocsCount) : undefined },
     { name: 'IPCR Commitments', to: '/commitments', icon: Target },
     { name: 'Accomplishment Monitoring', to: '/accomplishments', icon: Award },

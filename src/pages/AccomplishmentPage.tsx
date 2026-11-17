@@ -19,8 +19,14 @@ export const AccomplishmentPage: React.FC = () => {
     const related = activeActivities.filter(
       (a) => a.commitmentId === com.id && a.status === 'COMPLETED'
     );
+    const docActivities = related.filter((a) => !a.isFieldWork);
+    const fieldWorkActivities = related.filter((a) => a.isFieldWork);
+    const fieldWorkUnits = fieldWorkActivities.reduce(
+      (acc, a) => acc + (a.fieldWorkCount || 1),
+      0
+    );
     const targetQty = com.numericalTarget || 1;
-    const validatedQty = related.length;
+    const validatedQty = docActivities.length + fieldWorkUnits;
     const percentage = Math.min(100, Math.round((validatedQty / targetQty) * 100));
 
     // Sort to find latest activity date
@@ -31,6 +37,8 @@ export const AccomplishmentPage: React.FC = () => {
       com,
       targetQty,
       validatedQty,
+      docCount: docActivities.length,
+      fieldWorkUnits,
       percentage,
       relatedActivitiesCount: related.length,
       lastActivityDate,
@@ -92,7 +100,7 @@ export const AccomplishmentPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredItems.map(({ com, targetQty, validatedQty, percentage, relatedActivitiesCount, lastActivityDate, status }) => (
+            {filteredItems.map(({ com, targetQty, validatedQty, docCount, fieldWorkUnits, percentage, relatedActivitiesCount, lastActivityDate, status }) => (
               <tr key={com.id} className="hover:bg-slate-50/70 transition-colors">
                 {/* Indicator & Code */}
                 <td className="table-td max-w-sm">
@@ -114,7 +122,12 @@ export const AccomplishmentPage: React.FC = () => {
 
                 {/* Validated Output */}
                 <td className="table-td text-center font-bold text-xs text-slate-900 whitespace-nowrap">
-                  {validatedQty}
+                  <div>{validatedQty}</div>
+                  {fieldWorkUnits > 0 && (
+                    <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                      {docCount} docs + {fieldWorkUnits} field
+                    </div>
+                  )}
                 </td>
 
                 {/* Progress Bar */}

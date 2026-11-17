@@ -24,6 +24,7 @@ import {
   Download,
   Upload,
   Filter,
+  Compass,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -41,6 +42,8 @@ import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal
 import { StorageMonitorPill } from '@/components/common/StorageMonitorPill';
 import { saveAttachment, deleteAttachment } from '@/lib/attachmentStore';
 import { formatBytes } from '@/lib/storageMonitor';
+import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
+import { LogFieldWorkModal } from '@/components/calendar/LogFieldWorkModal';
 
 const BASE_CATEGORIES = [
   'Detailed Engineering',
@@ -68,7 +71,8 @@ export const ActivitiesPage: React.FC = () => {
     rejectClassification,
   } = useApp();
 
-  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'timeline'>('table');
+  const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -562,16 +566,38 @@ export const ActivitiesPage: React.FC = () => {
               onClick={() => setViewMode('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'calendar'
+                  ? 'bg-white text-emerald-950 font-bold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+              Calendar (Sheet View)
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'timeline'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" />
+              <Layers className="w-3.5 h-3.5" />
               Date Groups
             </button>
           </div>
 
-          {/* 3. Primary Action Button */}
+          {/* 3. Field Work Button (Supplies SM7) */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFieldWorkModalOpen(true)}
+            leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
+            className="border-emerald-300 text-emerald-900 bg-emerald-50/50 hover:bg-emerald-100/70 font-semibold"
+          >
+            + Field Work (SM7)
+          </Button>
+
+          {/* 4. Primary Action Button */}
           <Button
             variant="primary"
             size="sm"
@@ -1368,6 +1394,13 @@ export const ActivitiesPage: React.FC = () => {
                                   CY {act.calendarYear}
                                 </span>
                               )}
+
+                              {act.isFieldWork && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  <Compass className="w-2.5 h-2.5 text-emerald-700" />
+                                  Field Work (SM7 POW)
+                                </span>
+                              )}
                             </div>
                           </td>
 
@@ -1718,8 +1751,17 @@ export const ActivitiesPage: React.FC = () => {
             </table>
           </div>
         </Card>
+      ) : viewMode === 'calendar' ? (
+        /* Google Sheets-Style Monthly Calendar View */
+        <GoogleSheetCalendarView
+          onOpenDailyActivityModal={(d) => {
+            resetForm();
+            if (d) setActivityDate(d);
+            setIsFormOpen(true);
+          }}
+        />
       ) : (
-        /* Calendar / Date Groups View */
+        /* Timeline / Date Groups View */
         <div className="space-y-4">
           <Card padding="md">
             <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
@@ -1786,6 +1828,12 @@ export const ActivitiesPage: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* Field Work Logging Modal (Supplying SM7 POW) */}
+      <LogFieldWorkModal
+        isOpen={isFieldWorkModalOpen}
+        onClose={() => setIsFieldWorkModalOpen(false)}
+      />
 
       {/* Attachment Lightbox / Document Viewer Modal */}
       {viewingAttachment && (

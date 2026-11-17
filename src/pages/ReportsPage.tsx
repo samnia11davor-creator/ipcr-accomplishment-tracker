@@ -37,8 +37,16 @@ export const ReportsPage: React.FC = () => {
       );
 
       if (related.length > 0) {
-        const deliverablesList = related.map((a) => a.output).join('; ');
-        synthesized[com.id] = `Successfully prepared and accomplished ${related.length} deliverable(s) under ${com.mfoPap}, specifically: ${deliverablesList}. All engineering calculations and submissions strictly verified against approved targets.`;
+        const docActs = related.filter((a) => !a.isFieldWork);
+        const fieldActs = related.filter((a) => a.isFieldWork);
+        const fieldUnits = fieldActs.reduce((acc, a) => acc + (a.fieldWorkCount || 1), 0);
+
+        let narrative = `Successfully prepared and accomplished ${docActs.length} document deliverable(s) under ${com.mfoPap}, specifically: ${docActs.map((a) => a.output).join('; ')}.`;
+        if (fieldUnits > 0) {
+          narrative += ` Additionally conducted ${fieldUnits} on-site field validation/investigation(s) (${fieldActs.map((a) => a.output).join('; ')}) supplying POW readiness.`;
+        }
+        narrative += ` All submissions strictly verified against approved IPCR targets.`;
+        synthesized[com.id] = narrative;
       } else {
         synthesized[com.id] = com.actualAccomplishmentDraft || 'No accomplishments recorded for this period.';
       }
