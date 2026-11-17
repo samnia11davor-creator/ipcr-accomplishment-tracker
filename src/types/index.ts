@@ -146,7 +146,9 @@ export interface DailyActivity extends BaseEntity {
   projectId?: string;
   projectName?: string;
   project?: string;                // Specific Irrigation System name (e.g. "Pagan SRIP", "Lupon IS")
-  imoLocation?: string;            // "Davao Oriental IMO", "Davao del Norte IMO", "Davao del Sur IMO"
+  imoLocation?: string;            // "Davao Oriental IMO", "Davao del Norte IMO", "Davao del Sur IMO", "Regional Office XI"
+  calendarYear?: number;           // e.g. 2026, 2027
+  docType?: string;                // Letter, Memorandum, POW, FSR, Special Order
   timeSpentHours?: number;
   status: ActivityStatus;
   commitmentId?: string;           // The target commitment supplied by this activity

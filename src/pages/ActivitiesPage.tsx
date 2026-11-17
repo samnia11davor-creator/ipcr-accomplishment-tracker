@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   FileText,
   X,
+  RotateCcw,
+  MapPin,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -38,6 +40,13 @@ const CATEGORIES: ActivityCategory[] = [
   'Other',
 ];
 
+const STANDARD_IMOS = [
+  'Regional Office XI',
+  'Davao Oriental IMO',
+  'Davao del Norte IMO',
+  'Davao del Sur IMO',
+];
+
 export const ActivitiesPage: React.FC = () => {
   const {
     activities,
@@ -54,9 +63,17 @@ export const ActivitiesPage: React.FC = () => {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
+  // Advanced Filtering matching DOC LOG SHEET headers
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [filterProject, setFilterProject] = useState<string>('ALL');
+  const [filterCategory, setFilterCategory] = useState<string>('ALL');
+  const [filterImo, setFilterImo] = useState<string>('ALL');
+  const [filterYear, setFilterYear] = useState<string>('ALL');
+  const [filterCommitment, setFilterCommitment] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [dateRangePreset, setDateRangePreset] = useState<string>('ALL');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
 
   // Form states
   const [activityDate, setActivityDate] = useState<string>(getCurrentManilaDateString());
@@ -64,6 +81,8 @@ export const ActivitiesPage: React.FC = () => {
   const [output, setOutput] = useState<string>('');
   const [category, setCategory] = useState<ActivityCategory>('Detailed Engineering');
   const [project, setProject] = useState<string>('Suawan SRIP');
+  const [imoLocation, setImoLocation] = useState<string>('Davao Oriental IMO');
+  const [calendarYear, setCalendarYear] = useState<number>(2026);
   const [timeSpent, setTimeSpent] = useState<string>('4.0');
   const [status, setStatus] = useState<ActivityStatus>('COMPLETED');
   const [commitmentId, setCommitmentId] = useState<string>('');
@@ -75,6 +94,8 @@ export const ActivitiesPage: React.FC = () => {
     setOutput('');
     setCategory('Detailed Engineering');
     setProject('Suawan SRIP');
+    setImoLocation('Davao Oriental IMO');
+    setCalendarYear(2026);
     setTimeSpent('4.0');
     setStatus('COMPLETED');
     setCommitmentId('');
@@ -90,6 +111,8 @@ export const ActivitiesPage: React.FC = () => {
     setOutput(act.output);
     setCategory(act.category);
     setProject(act.project || '');
+    setImoLocation(act.imoLocation || 'Regional Office XI');
+    setCalendarYear(act.calendarYear || 2026);
     setTimeSpent(String(act.timeSpentHours || 4.0));
     setStatus(act.status);
     setCommitmentId(act.commitmentId || '');
@@ -105,6 +128,8 @@ export const ActivitiesPage: React.FC = () => {
       output: act.output,
       category: act.category,
       project: act.project,
+      imoLocation: act.imoLocation,
+      calendarYear: act.calendarYear,
       timeSpentHours: act.timeSpentHours,
       status: 'ONGOING',
       commitmentId: act.commitmentId,
@@ -129,6 +154,8 @@ export const ActivitiesPage: React.FC = () => {
           output,
           category,
           project,
+          imoLocation,
+          calendarYear,
           timeSpentHours: parseFloat(timeSpent) || 4.0,
           status,
           commitmentId: commitmentId || existing.commitmentId,
@@ -142,6 +169,8 @@ export const ActivitiesPage: React.FC = () => {
         output,
         category,
         project,
+        imoLocation,
+        calendarYear,
         timeSpentHours: parseFloat(timeSpent) || 4.0,
         status,
         commitmentId: commitmentId || undefined,
@@ -152,17 +181,75 @@ export const ActivitiesPage: React.FC = () => {
     resetForm();
   };
 
-  // Filter activities
+  // Distinct filter options extracted from existing records
   const activeActivities = activities.filter((a) => !a.isDeleted);
 
-  const filteredActivities = activeActivities.filter((act) => {
-    const matchesSearch =
-      act.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      act.output.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (act.project && act.project.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      act.category.toLowerCase().includes(searchQuery.toLowerCase());
+  const uniqueProjects = Array.from(
+    new Set(
+      activeActivities
+        .map((a) => a.project)
+        .filter((p): p is string => Boolean(p && p.trim().length > 0))
+    )
+  ).sort();
 
-    const matchesCategory = selectedCategory === 'ALL' || act.category === selectedCategory;
+  const uniqueImos = Array.from(
+    new Set([
+      ...STANDARD_IMOS,
+      ...activeActivities
+        .map((a) => a.imoLocation)
+        .filter((i): i is string => Boolean(i && i.trim().length > 0)),
+    ])
+  ).sort();
+
+  const uniqueYears = Array.from(
+    new Set([
+      '2026',
+      '2027',
+      '2025',
+      ...activeActivities.map((a) =>
+        a.calendarYear ? String(a.calendarYear) : a.activityDate?.slice(0, 4)
+      ),
+    ])
+  )
+    .filter(Boolean)
+    .sort()
+    .reverse();
+
+  // Multi-dimensional filtering logic
+  const filteredActivities = activeActivities.filter((act) => {
+    // 1. Global Search
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !query ||
+      act.description.toLowerCase().includes(query) ||
+      act.output.toLowerCase().includes(query) ||
+      (act.project && act.project.toLowerCase().includes(query)) ||
+      (act.imoLocation && act.imoLocation.toLowerCase().includes(query)) ||
+      (act.remarks && act.remarks.toLowerCase().includes(query)) ||
+      act.category.toLowerCase().includes(query);
+
+    // 2. Project
+    const matchesProject = filterProject === 'ALL' || act.project === filterProject;
+
+    // 3. Category / Doc Type
+    const matchesCategory = filterCategory === 'ALL' || act.category === filterCategory;
+
+    // 4. IMO Location
+    const matchesImo = filterImo === 'ALL' || act.imoLocation === filterImo;
+
+    // 5. Calendar Year
+    const actYear = String(act.calendarYear || act.activityDate?.slice(0, 4));
+    const matchesYear = filterYear === 'ALL' || actYear === filterYear;
+
+    // 6. IPCR Commitment
+    const matchesCommitment =
+      filterCommitment === 'ALL'
+        ? true
+        : filterCommitment === 'UNCLASSIFIED'
+        ? !act.commitmentId
+        : act.commitmentId === filterCommitment;
+
+    // 7. Status
     const matchesStatus =
       statusFilter === 'ALL'
         ? true
@@ -170,8 +257,59 @@ export const ActivitiesPage: React.FC = () => {
         ? act.classificationStatus === 'PENDING'
         : act.status === statusFilter;
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    // 8. Date Range / Duration
+    let matchesDate = true;
+    if (dateRangePreset === 'THIS_MONTH') {
+      const nowMonth = getCurrentManilaDateString().slice(0, 7); // YYYY-MM
+      matchesDate = act.activityDate.startsWith(nowMonth);
+    } else if (dateRangePreset === 'LAST_30') {
+      const today = new Date();
+      const past30 = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      matchesDate = act.activityDate >= past30;
+    } else if (dateRangePreset === 'SEM1') {
+      matchesDate = act.activityDate >= '2026-01-01' && act.activityDate <= '2026-06-30';
+    } else if (dateRangePreset === 'SEM2') {
+      matchesDate = act.activityDate >= '2026-07-01' && act.activityDate <= '2026-12-31';
+    } else if (dateRangePreset === 'CUSTOM') {
+      if (customStartDate && act.activityDate < customStartDate) matchesDate = false;
+      if (customEndDate && act.activityDate > customEndDate) matchesDate = false;
+    }
+
+    return (
+      matchesSearch &&
+      matchesProject &&
+      matchesCategory &&
+      matchesImo &&
+      matchesYear &&
+      matchesCommitment &&
+      matchesStatus &&
+      matchesDate
+    );
   });
+
+  // Calculate active filters count
+  const activeFiltersCount = [
+    filterProject !== 'ALL',
+    filterCategory !== 'ALL',
+    filterImo !== 'ALL',
+    filterYear !== 'ALL',
+    filterCommitment !== 'ALL',
+    statusFilter !== 'ALL',
+    dateRangePreset !== 'ALL',
+  ].filter(Boolean).length;
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setFilterProject('ALL');
+    setFilterCategory('ALL');
+    setFilterImo('ALL');
+    setFilterYear('ALL');
+    setFilterCommitment('ALL');
+    setStatusFilter('ALL');
+    setDateRangePreset('ALL');
+    setCustomStartDate('');
+    setCustomEndDate('');
+  };
 
   const completedCount = activeActivities.filter((a) => a.status === 'COMPLETED').length;
   const ongoingCount = activeActivities.filter((a) => a.status === 'ONGOING').length;
@@ -241,8 +379,10 @@ export const ActivitiesPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase">Total Logged</span>
-            <div className="text-lg font-bold text-slate-900 mt-0.5">{activeActivities.length}</div>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase">Filtered Records</span>
+            <div className="text-lg font-bold text-slate-900 mt-0.5">
+              {filteredActivities.length} <span className="text-xs font-normal text-slate-400">/ {activeActivities.length} total</span>
+            </div>
           </div>
           <span className="text-xs text-slate-400 font-mono">Entries</span>
         </div>
@@ -309,25 +449,60 @@ export const ActivitiesPage: React.FC = () => {
               </div>
 
               {/* Related Project */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
-                  Related Irrigation Project / System *
+                  Related Project *
                 </label>
                 <input
                   type="text"
                   required
                   value={project}
                   onChange={(e) => setProject(e.target.value)}
-                  placeholder="e.g. Suawan SRIP, Pagan SRIP, Mal River, Lupon IS..."
+                  placeholder="e.g. Suawan SRIP, Pagan SRIP, Mal River..."
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
                 />
+              </div>
+
+              {/* IMO Location */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  IMO / Office Location *
+                </label>
+                <select
+                  value={imoLocation}
+                  onChange={(e) => setImoLocation(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
+                >
+                  {uniqueImos.map((imo) => (
+                    <option key={imo} value={imo}>
+                      {imo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Calendar Year */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Calendar Year (CY) *
+                </label>
+                <select
+                  value={calendarYear}
+                  onChange={(e) => setCalendarYear(Number(e.target.value))}
+                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
+                >
+                  <option value={2026}>CY 2026</option>
+                  <option value={2027}>CY 2027</option>
+                  <option value={2025}>CY 2025</option>
+                </select>
               </div>
 
               {/* Category */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Activity Category *
+                  Activity Category / Doc Type *
                 </label>
                 <select
                   value={category}
@@ -376,19 +551,19 @@ export const ActivitiesPage: React.FC = () => {
               </div>
 
               {/* IPCR Commitment Selection */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Assigned IPCR Goal (Optional - AI will classify automatically)
+                  Assigned IPCR Goal
                 </label>
                 <select
                   value={commitmentId}
                   onChange={(e) => setCommitmentId(e.target.value)}
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm font-medium"
                 >
-                  <option value="">Auto-classify with AI based on task description</option>
+                  <option value="">Auto-classify with AI</option>
                   {commitments.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.tier === 'STRATEGIC' ? 'I' : c.tier === 'CORE' ? 'II' : 'III'}. {c.commitmentCode} — {c.mfoPap.slice(0, 50)}...
+                      {c.tier === 'STRATEGIC' ? 'I' : c.tier === 'CORE' ? 'II' : 'III'}. {c.commitmentCode} — {c.mfoPap.slice(0, 40)}...
                     </option>
                   ))}
                 </select>
@@ -451,44 +626,178 @@ export const ActivitiesPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search daily activities by task, tangible output, project name, or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-nia-500 focus:ring-nia-500 bg-slate-50/50"
-          />
+      {/* COMPREHENSIVE DOC LOG SHEET MULTI-FILTER BAR */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        {/* Row 1: Primary Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* Global Search */}
+          <div className="lg:col-span-2 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search description, output, remarks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-nia-500 focus:ring-nia-500 bg-slate-50/50"
+            />
+          </div>
+
+          {/* Project Filter */}
+          <div>
+            <select
+              value={filterProject}
+              onChange={(e) => setFilterProject(e.target.value)}
+              className="w-full text-xs rounded-lg border border-slate-200 py-1.5 px-3 bg-slate-50/50 focus:bg-white focus:border-nia-500 text-slate-800 font-medium"
+            >
+              <option value="ALL">All Projects ({uniqueProjects.length})</option>
+              {uniqueProjects.map((proj) => (
+                <option key={proj} value={proj}>
+                  {proj}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category / Doc Type Filter */}
+          <div>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full text-xs rounded-lg border border-slate-200 py-1.5 px-3 bg-slate-50/50 focus:bg-white focus:border-nia-500 text-slate-800 font-medium"
+            >
+              <option value="ALL">All Categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date Duration / Presets */}
+          <div>
+            <select
+              value={dateRangePreset}
+              onChange={(e) => setDateRangePreset(e.target.value)}
+              className="w-full text-xs rounded-lg border border-slate-200 py-1.5 px-3 bg-slate-50/50 focus:bg-white focus:border-nia-500 text-slate-800 font-medium"
+            >
+              <option value="ALL">All Dates</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="LAST_30">Last 30 Days</option>
+              <option value="SEM2">2nd Sem (Jul - Dec 2026)</option>
+              <option value="SEM1">1st Sem (Jan - Jun 2026)</option>
+              <option value="CUSTOM">Custom Date Range...</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-xs rounded-lg border border-slate-300 py-1.5 px-3 bg-white focus:outline-none"
-          >
-            <option value="ALL">All Categories</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        {/* Row 2: Secondary / Advanced Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 text-xs">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            {/* IMO Location Filter */}
+            <div className="w-44">
+              <select
+                value={filterImo}
+                onChange={(e) => setFilterImo(e.target.value)}
+                className="w-full text-xs rounded-lg border border-slate-200 py-1 px-2.5 bg-white text-slate-700"
+              >
+                <option value="ALL">All IMOs / Locations</option>
+                {uniqueImos.map((imo) => (
+                  <option key={imo} value={imo}>
+                    {imo}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs rounded-lg border border-slate-300 py-1.5 px-3 bg-white focus:outline-none"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="ONGOING">Ongoing</option>
-            <option value="PENDING_AI">Awaiting AI Confirmation</option>
-            <option value="DRAFT">Draft</option>
-          </select>
+            {/* Calendar Year (CY) Filter */}
+            <div className="w-28">
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full text-xs rounded-lg border border-slate-200 py-1 px-2.5 bg-white text-slate-700"
+              >
+                <option value="ALL">All CY</option>
+                {uniqueYears.map((yr) => (
+                  <option key={yr} value={yr}>
+                    CY {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* IPCR Commitment Filter */}
+            <div className="w-44">
+              <select
+                value={filterCommitment}
+                onChange={(e) => setFilterCommitment(e.target.value)}
+                className="w-full text-xs rounded-lg border border-slate-200 py-1 px-2.5 bg-white text-slate-700"
+              >
+                <option value="ALL">All IPCR Goals</option>
+                {commitments.map((com) => (
+                  <option key={com.id} value={com.id}>
+                    {com.commitmentCode} - {com.target.slice(0, 22)}...
+                  </option>
+                ))}
+                <option value="UNCLASSIFIED">Unclassified</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="w-36">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full text-xs rounded-lg border border-slate-200 py-1 px-2.5 bg-white text-slate-700"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="ONGOING">Ongoing</option>
+                <option value="PENDING_AI">Awaiting AI Match</option>
+                <option value="DRAFT">Draft</option>
+              </select>
+            </div>
+
+            {/* Custom Date Pickers when 'CUSTOM' selected */}
+            {dateRangePreset === 'CUSTOM' && (
+              <div className="flex items-center gap-1.5 animate-in fade-in">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="text-xs rounded-lg border border-slate-200 px-2 py-0.5 bg-white text-slate-700"
+                  placeholder="From"
+                />
+                <span className="text-slate-400">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="text-xs rounded-lg border border-slate-200 px-2 py-0.5 bg-white text-slate-700"
+                  placeholder="To"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Reset Filters & Active Filters Counter */}
+          <div className="flex items-center gap-2 ml-auto">
+            {activeFiltersCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-nia-100 text-nia-800 text-[11px] font-bold">
+                {activeFiltersCount} active filter{activeFiltersCount > 1 ? 's' : ''}
+              </span>
+            )}
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={resetAllFilters}
+                className="text-[11px] text-slate-500 hover:text-rose-600 flex items-center gap-1 font-semibold transition-colors"
+                title="Reset all filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -496,11 +805,11 @@ export const ActivitiesPage: React.FC = () => {
       {viewMode === 'table' ? (
         <Card padding="none" className="overflow-hidden border border-slate-200 shadow-sm bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1050px]">
+            <table className="w-full text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                   <th className="py-3 px-3.5 w-32">Date / Hours</th>
-                  <th className="py-3 px-3.5 w-48">Project & Category</th>
+                  <th className="py-3 px-3.5 w-56">Project, IMO & Category</th>
                   <th className="py-3 px-3.5">Activity Description</th>
                   <th className="py-3 px-3.5">Tangible Output</th>
                   <th className="py-3 px-3.5 w-56">IPCR Commitment (Goal)</th>
@@ -514,7 +823,7 @@ export const ActivitiesPage: React.FC = () => {
                     <td colSpan={7} className="text-center py-12 text-slate-400">
                       <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                       <p className="font-semibold text-slate-600">No activities match your filters</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Click "Log Daily Work" above to record an activity.</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Try adjusting your filters or click "Reset" above.</p>
                     </td>
                   </tr>
                 ) : (
@@ -552,15 +861,25 @@ export const ActivitiesPage: React.FC = () => {
                             </div>
                           </td>
 
-                          {/* 2. Project & Category */}
+                          {/* 2. Project, IMO & Category */}
                           <td className="py-3 px-3.5 align-top">
-                            <div className="font-bold text-slate-900 truncate max-w-[180px]">
+                            <div className="font-bold text-slate-900 leading-snug">
                               {act.project || 'General / Section Work'}
                             </div>
-                            <div className="mt-1">
-                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                                 {act.category}
                               </span>
+                              {act.imoLocation && (
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] text-slate-600 bg-slate-50 border border-slate-200">
+                                  {act.imoLocation}
+                                </span>
+                              )}
+                              {act.calendarYear && (
+                                <span className="text-[10px] font-mono text-slate-400">
+                                  CY {act.calendarYear}
+                                </span>
+                              )}
                             </div>
                           </td>
 
@@ -746,10 +1065,12 @@ export const ActivitiesPage: React.FC = () => {
 
                               {/* Metadata & Remarks */}
                               <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-4">
                                   <span>Logged: <strong className="text-slate-700">{act.activityDate}</strong></span>
                                   <span>Time: <strong className="text-slate-700">{act.timeSpentHours || 4.0} hours</strong></span>
                                   <span>Category: <strong className="text-slate-700">{act.category}</strong></span>
+                                  {act.imoLocation && <span>IMO: <strong className="text-slate-700">{act.imoLocation}</strong></span>}
+                                  {act.calendarYear && <span>CY: <strong className="text-slate-700">{act.calendarYear}</strong></span>}
                                 </div>
                                 {act.remarks && (
                                   <div className="text-slate-600">
