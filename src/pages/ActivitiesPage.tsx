@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Calendar,
-  List,
+  Table as TableIcon,
   Plus,
   Search,
   Copy,
@@ -9,7 +9,11 @@ import {
   Trash2,
   Clock,
   Sparkles,
-  Check,
+  ChevronDown,
+  ChevronUp,
+  FolderGit2,
+  CheckCircle2,
+  FileText,
   X,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
@@ -45,9 +49,10 @@ export const ActivitiesPage: React.FC = () => {
     rejectClassification,
   } = useApp();
 
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -58,7 +63,7 @@ export const ActivitiesPage: React.FC = () => {
   const [description, setDescription] = useState<string>('');
   const [output, setOutput] = useState<string>('');
   const [category, setCategory] = useState<ActivityCategory>('Detailed Engineering');
-  const [project, setProject] = useState<string>('Digos River Irrigation System Rehabilitation');
+  const [project, setProject] = useState<string>('Suawan SRIP');
   const [timeSpent, setTimeSpent] = useState<string>('4.0');
   const [status, setStatus] = useState<ActivityStatus>('COMPLETED');
   const [commitmentId, setCommitmentId] = useState<string>('');
@@ -69,7 +74,7 @@ export const ActivitiesPage: React.FC = () => {
     setDescription('');
     setOutput('');
     setCategory('Detailed Engineering');
-    setProject('Digos River Irrigation System Rehabilitation');
+    setProject('Suawan SRIP');
     setTimeSpent('4.0');
     setStatus('COMPLETED');
     setCommitmentId('');
@@ -90,12 +95,13 @@ export const ActivitiesPage: React.FC = () => {
     setCommitmentId(act.commitmentId || '');
     setRemarks(act.remarks || '');
     setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDuplicate = (act: DailyActivity) => {
     addActivity({
       activityDate: getCurrentManilaDateString(),
-      description: `[Duplicate] ${act.description}`,
+      description: `[Follow-up] ${act.description}`,
       output: act.output,
       category: act.category,
       project: act.project,
@@ -148,96 +154,149 @@ export const ActivitiesPage: React.FC = () => {
 
   // Filter activities
   const activeActivities = activities.filter((a) => !a.isDeleted);
+
   const filteredActivities = activeActivities.filter((act) => {
-    const matchesQuery =
+    const matchesSearch =
       act.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       act.output.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (act.project && act.project.toLowerCase().includes(searchQuery.toLowerCase()));
+      (act.project && act.project.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      act.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCat = selectedCategory === 'ALL' || act.category === selectedCategory;
-    const matchesStatus = statusFilter === 'ALL' || act.status === statusFilter;
+    const matchesCategory = selectedCategory === 'ALL' || act.category === selectedCategory;
+    const matchesStatus =
+      statusFilter === 'ALL'
+        ? true
+        : statusFilter === 'PENDING_AI'
+        ? act.classificationStatus === 'PENDING'
+        : act.status === statusFilter;
 
-    return matchesQuery && matchesCat && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const completedCount = activeActivities.filter((a) => a.status === 'COMPLETED').length;
+  const ongoingCount = activeActivities.filter((a) => a.status === 'ONGOING').length;
+  const pendingAiCount = activeActivities.filter((a) => a.classificationStatus === 'PENDING').length;
 
   return (
     <div className="space-y-6">
-      {/* Header and Controls */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Daily Activity Logger
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
+            Daily Activity Logsheet
+            <Badge variant="blue" size="sm" className="font-normal font-sans">
+              DOC LOG Format
+            </Badge>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Capture daily engineering tasks, outputs, and time allocation • Record once, use everywhere
+            Spreadsheet-grade daily work monitoring • Each recorded engineering task feeds into your active IPCR commitments
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+          <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
             <button
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                viewMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <List className="w-3.5 h-3.5" />
-              List ({filteredActivities.length})
+              <TableIcon className="w-3.5 h-3.5" />
+              Table View
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
-                viewMode === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                viewMode === 'calendar'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              Calendar
+              Date Groups
             </button>
           </div>
 
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
             onClick={() => {
-              if (isFormOpen) {
-                resetForm();
+              if (isFormOpen && !editingActivityId) {
+                setIsFormOpen(false);
               } else {
+                resetForm();
                 setIsFormOpen(true);
               }
             }}
+            leftIcon={isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           >
-            {isFormOpen ? 'Close Form' : 'New Activity'}
+            {isFormOpen ? 'Close Form' : 'Log Daily Work'}
           </Button>
         </div>
       </div>
 
-      {/* Fast Daily Activity Entry Form */}
+      {/* Quick Summary Pill Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase">Total Logged</span>
+            <div className="text-lg font-bold text-slate-900 mt-0.5">{activeActivities.length}</div>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">Entries</span>
+        </div>
+
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-emerald-600 uppercase">Completed</span>
+            <div className="text-lg font-bold text-emerald-700 mt-0.5">{completedCount}</div>
+          </div>
+          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+        </div>
+
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-blue-600 uppercase">Ongoing</span>
+            <div className="text-lg font-bold text-blue-700 mt-0.5">{ongoingCount}</div>
+          </div>
+          <Clock className="w-5 h-5 text-blue-500" />
+        </div>
+
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-amber-600 uppercase">AI Matching</span>
+            <div className="text-lg font-bold text-amber-700 mt-0.5">{pendingAiCount} Pending</div>
+          </div>
+          <Sparkles className="w-5 h-5 text-amber-500" />
+        </div>
+      </div>
+
+      {/* Collapsible Log Entry Form */}
       {isFormOpen && (
-        <Card padding="md" className="border-2 border-nia-200 bg-nia-50/20 shadow-md">
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+        <Card padding="md" className="border-2 border-nia-600 shadow-lg animate-in fade-in duration-200 bg-white">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-md bg-nia-600 text-white">
-                  <Plus className="w-4 h-4" />
-                </span>
+                <div className="w-8 h-8 rounded-lg bg-nia-700 text-white flex items-center justify-center font-bold text-xs">
+                  {editingActivityId ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    {editingActivityId ? 'Edit Activity Record' : 'Record Daily Work Entry'}
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {editingActivityId ? 'Edit Daily Activity Entry' : 'Record New Daily Engineering Work'}
                   </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Enter details below. Intelligent AI matching will suggest the approved IPCR commitment.
+                  <p className="text-xs text-slate-500">
+                    Enter details below. Intelligent AI matching will map your task to the approved IPCR commitment.
                   </p>
                 </div>
               </div>
               <Badge variant="blue">Asia/Manila (PHT)</Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Activity Date */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Activity Date *
                 </label>
                 <input
@@ -249,9 +308,25 @@ export const ActivitiesPage: React.FC = () => {
                 />
               </div>
 
+              {/* Related Project */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
+                  Related Irrigation Project / System *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  placeholder="e.g. Suawan SRIP, Pagan SRIP, Mal River, Lupon IS..."
+                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
+                />
+              </div>
+
               {/* Category */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Activity Category *
                 </label>
                 <select
@@ -267,123 +342,109 @@ export const ActivitiesPage: React.FC = () => {
                 </select>
               </div>
 
-              {/* Status & Hours */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Status *
-                  </label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as ActivityStatus)}
-                    className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
-                  >
-                    <option value="COMPLETED">Completed</option>
-                    <option value="ONGOING">Ongoing</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Hours Spent
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="16"
-                    value={timeSpent}
-                    onChange={(e) => setTimeSpent(e.target.value)}
-                    className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
-                  />
-                </div>
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Status *
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as ActivityStatus)}
+                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
+                >
+                  <option value="COMPLETED">Completed</option>
+                  <option value="ONGOING">Ongoing</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
               </div>
 
-              {/* Related Project */}
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Related Irrigation Project / Feasibility Study
+              {/* Hours Spent */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" /> Hours Spent
                 </label>
                 <input
-                  type="text"
-                  value={project}
-                  onChange={(e) => setProject(e.target.value)}
-                  placeholder="e.g. Digos River Irrigation System, Padada Dam..."
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  max="16"
+                  value={timeSpent}
+                  onChange={(e) => setTimeSpent(e.target.value)}
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
                 />
               </div>
 
               {/* IPCR Commitment Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Assigned IPCR Target
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Assigned IPCR Goal (Optional - AI will classify automatically)
                 </label>
                 <select
                   value={commitmentId}
                   onChange={(e) => setCommitmentId(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
+                  className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm font-medium"
                 >
-                  <option value="">(Auto-classify with AI)</option>
+                  <option value="">Auto-classify with AI based on task description</option>
                   {commitments.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.commitmentCode} - {c.target.slice(0, 30)}...
+                      {c.tier === 'STRATEGIC' ? 'I' : c.tier === 'CORE' ? 'II' : 'III'}. {c.commitmentCode} — {c.mfoPap.slice(0, 50)}...
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* Activity Description */}
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Activity Description (What engineering task did you work on?) *
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Activity / Task Description (What engineering work did you do?) *
                 </label>
                 <textarea
                   rows={2}
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detailed description of technical calculation, review, inspection or design conducted..."
+                  placeholder="e.g. Conducted field inspection and hydraulic validation of canal lining turnout design..."
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
                 />
               </div>
 
-              {/* Specific Output */}
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Specific Output / Tangible Deliverable *
+              {/* Tangible Output */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Tangible Output / Accomplishment (What deliverable was produced?) *
                 </label>
                 <textarea
                   rows={2}
                   required
                   value={output}
                   onChange={(e) => setOutput(e.target.value)}
-                  placeholder="Specific deliverable (e.g. 'Drafted 3 sheets structural CAD drawings', 'Prepared review endorsement memo')..."
+                  placeholder="e.g. Prepared and submitted technical review comments on canal drawings to Section Chief..."
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
                 />
               </div>
 
               {/* Remarks */}
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Remarks / Compliance Notes (Optional)
+              <div className="md:col-span-4">
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Remarks / File Links / Coordination Notes (Optional)
                 </label>
                 <input
                   type="text"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="e.g. Conforms with NIA Design Standards, joint inspection with IMO staff..."
+                  placeholder="e.g. Coordinated with Davao Oriental IMO Engr. Ramos; document reference #RO-2026-081"
                   className="w-full text-xs rounded-lg border border-slate-300 focus:border-nia-500 focus:ring-nia-500 px-3 py-2 bg-white shadow-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 mt-5 pt-3 border-t border-slate-200">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
               <Button variant="secondary" size="sm" type="button" onClick={resetForm}>
                 Cancel
               </Button>
               <Button variant="primary" size="sm" type="submit">
-                {editingActivityId ? 'Update Activity' : 'Save & Log Activity'}
+                {editingActivityId ? 'Update Activity' : 'Save Daily Activity'}
               </Button>
             </div>
           </form>
@@ -396,7 +457,7 @@ export const ActivitiesPage: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search activities by description, output, project, or commitment..."
+            placeholder="Search daily activities by task, tangible output, project name, or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-nia-500 focus:ring-nia-500 bg-slate-50/50"
@@ -411,7 +472,9 @@ export const ActivitiesPage: React.FC = () => {
           >
             <option value="ALL">All Categories</option>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
 
@@ -423,142 +486,290 @@ export const ActivitiesPage: React.FC = () => {
             <option value="ALL">All Statuses</option>
             <option value="COMPLETED">Completed</option>
             <option value="ONGOING">Ongoing</option>
+            <option value="PENDING_AI">Awaiting AI Confirmation</option>
             <option value="DRAFT">Draft</option>
           </select>
         </div>
       </div>
 
-      {/* Activity List View */}
-      {viewMode === 'list' ? (
-        <div className="space-y-3">
-          {filteredActivities.length === 0 ? (
-            <Card padding="md" className="text-center py-12">
-              <p className="text-sm font-semibold text-slate-700">No activities match your filters.</p>
-              <p className="text-xs text-slate-400 mt-1">Try clearing your search query or add a new activity above.</p>
-            </Card>
-          ) : (
-            filteredActivities.map((act) => {
-              const matchedCommitment = commitments.find((c) => c.id === act.commitmentId);
-              const isPendingClassification = act.classificationStatus === 'PENDING' && act.aiClassification;
+      {/* OFFICIAL SPREADSHEET-GRADE ENGINEERING TABLE */}
+      {viewMode === 'table' ? (
+        <Card padding="none" className="overflow-hidden border border-slate-200 shadow-sm bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[1050px]">
+              <thead>
+                <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  <th className="py-3 px-3.5 w-32">Date / Hours</th>
+                  <th className="py-3 px-3.5 w-48">Project & Category</th>
+                  <th className="py-3 px-3.5">Activity Description</th>
+                  <th className="py-3 px-3.5">Tangible Output</th>
+                  <th className="py-3 px-3.5 w-56">IPCR Commitment (Goal)</th>
+                  <th className="py-3 px-3.5 w-24 text-center">Status</th>
+                  <th className="py-3 px-3.5 w-24 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredActivities.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-slate-400">
+                      <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="font-semibold text-slate-600">No activities match your filters</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Click "Log Daily Work" above to record an activity.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredActivities.map((act) => {
+                    const matchedCommitment = commitments.find((c) => c.id === act.commitmentId);
+                    const isPendingClassification =
+                      act.classificationStatus === 'PENDING' && act.aiClassification;
+                    const isExpanded = expandedRowId === act.id;
 
-              return (
-                <Card key={act.id} padding="md" className="hover:border-slate-300 transition-all">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="blue" size="sm" className="font-mono">
-                        {matchedCommitment?.commitmentCode || 'UNCLASSIFIED'}
-                      </Badge>
-                      <span className="text-xs font-semibold text-slate-800">
-                        {matchedCommitment?.mfoPap || 'Awaiting Confirmation'}
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-xs text-slate-500 font-mono">{act.activityDate}</span>
-                    </div>
+                    const romanTier =
+                      matchedCommitment?.tier === 'STRATEGIC'
+                        ? 'I'
+                        : matchedCommitment?.tier === 'CORE'
+                        ? 'II'
+                        : matchedCommitment?.tier === 'SUPPORT'
+                        ? 'III'
+                        : '';
 
-                    <div className="flex items-center gap-2">
-                      <Badge variant={act.status === 'COMPLETED' ? 'emerald' : 'blue'} size="sm" dot>
-                        {act.status}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <Clock className="w-3 h-3" />
-                        <span>{act.timeSpentHours} hrs</span>
-                      </div>
-                    </div>
-                  </div>
+                    return (
+                      <React.Fragment key={act.id}>
+                        <tr
+                          className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
+                            isExpanded ? 'bg-nia-50/40' : ''
+                          }`}
+                          onClick={() => setExpandedRowId(isExpanded ? null : act.id)}
+                        >
+                          {/* 1. Date & Hours */}
+                          <td className="py-3 px-3.5 align-top">
+                            <div className="font-mono font-bold text-slate-900 text-xs">
+                              {act.activityDate}
+                            </div>
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>{act.timeSpentHours || 4.0} hrs</span>
+                            </div>
+                          </td>
 
-                  <div className="mt-2 space-y-1.5">
-                    <p className="text-xs text-slate-800 leading-relaxed">
-                      <strong className="text-slate-900">Task: </strong>
-                      {act.description}
-                    </p>
-                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-700">
-                      <span className="font-semibold text-slate-800">Tangible Output: </span>
-                      {act.output}
-                    </div>
-                  </div>
+                          {/* 2. Project & Category */}
+                          <td className="py-3 px-3.5 align-top">
+                            <div className="font-bold text-slate-900 truncate max-w-[180px]">
+                              {act.project || 'General / Section Work'}
+                            </div>
+                            <div className="mt-1">
+                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                {act.category}
+                              </span>
+                            </div>
+                          </td>
 
-                  {/* AI Classification Suggestion Card (if pending user confirmation) */}
-                  {isPendingClassification && (
-                    <div className="mt-3 p-3 rounded-lg bg-sky-50/80 border border-sky-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 font-semibold text-sky-900">
-                          <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                          <span>AI Classification Match: {matchedCommitment?.commitmentCode} ({Math.round((act.aiClassification?.confidenceScore || 0) * 100)}% confidence)</span>
-                        </div>
-                        <p className="text-[11px] text-sky-800">{act.aiClassification?.rationale}</p>
-                        {act.aiClassification?.missingInformation && (
-                          <p className="text-[10px] text-amber-700 font-medium">{act.aiClassification.missingInformation}</p>
+                          {/* 3. Activity Description */}
+                          <td className="py-3 px-3.5 align-top">
+                            <p className="text-slate-800 line-clamp-2 leading-relaxed">
+                              {act.description}
+                            </p>
+                            {act.remarks && (
+                              <p className="text-[11px] text-slate-400 truncate max-w-sm mt-0.5">
+                                Remarks: {act.remarks}
+                              </p>
+                            )}
+                          </td>
+
+                          {/* 4. Tangible Output */}
+                          <td className="py-3 px-3.5 align-top">
+                            <p className="text-slate-900 font-medium line-clamp-2 leading-relaxed">
+                              {act.output}
+                            </p>
+                          </td>
+
+                          {/* 5. IPCR Commitment & AI */}
+                          <td className="py-3 px-3.5 align-top" onClick={(e) => e.stopPropagation()}>
+                            {matchedCommitment ? (
+                              <div className="space-y-1">
+                                <span
+                                  className={`inline-flex items-center gap-1 font-mono text-[11px] font-bold px-2 py-0.5 rounded ${
+                                    matchedCommitment.tier === 'STRATEGIC'
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      : matchedCommitment.tier === 'CORE'
+                                      ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  }`}
+                                >
+                                  {romanTier}. {matchedCommitment.commitmentCode}
+                                </span>
+                                <div className="text-[10px] text-slate-500 font-medium truncate max-w-[200px]">
+                                  {matchedCommitment.mfoPap}
+                                </div>
+                              </div>
+                            ) : (
+                              <Badge variant="rose" size="sm">
+                                Unclassified
+                              </Badge>
+                            )}
+
+                            {/* Inline AI Quick Match Actions */}
+                            {isPendingClassification && (
+                              <div className="mt-1.5 p-1.5 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-between gap-1 text-[11px]">
+                                <span className="text-sky-800 font-medium flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-sky-600" />
+                                  {Math.round((act.aiClassification?.confidenceScore || 0) * 100)}% match
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() =>
+                                      confirmClassification(
+                                        act.id,
+                                        act.aiClassification!.suggestedCommitmentId
+                                      )
+                                    }
+                                    className="px-1.5 py-0.5 rounded bg-sky-600 text-white font-bold hover:bg-sky-700 text-[10px]"
+                                    title="Confirm AI match"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    onClick={() => rejectClassification(act.id)}
+                                    className="px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 text-[10px]"
+                                    title="Change classification"
+                                  >
+                                    Change
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* 6. Status */}
+                          <td className="py-3 px-3.5 align-top text-center">
+                            <Badge
+                              variant={
+                                act.status === 'COMPLETED'
+                                  ? 'emerald'
+                                  : act.status === 'ONGOING'
+                                  ? 'blue'
+                                  : 'slate'
+                              }
+                              size="sm"
+                              dot
+                            >
+                              {act.status}
+                            </Badge>
+                          </td>
+
+                          {/* 7. Action buttons */}
+                          <td className="py-3 px-3.5 align-top text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleDuplicate(act)}
+                                className="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 transition-colors"
+                                title="Duplicate with today's date"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(act)}
+                                className="p-1 text-slate-400 hover:text-nia-700 rounded hover:bg-nia-50 transition-colors"
+                                title="Edit activity"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm('Move this activity to trash?')) {
+                                    deleteActivity(act.id);
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setExpandedRowId(isExpanded ? null : act.id)}
+                                className="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 transition-colors"
+                                title="Expand details"
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* EXPANDED ROW ACCORDION: Shows 100% of the engineering details */}
+                        {isExpanded && (
+                          <tr className="bg-slate-50 border-b border-slate-200 animate-in fade-in">
+                            <td colSpan={7} className="p-4 space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Complete Task Narrative */}
+                                <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                                    <FileText className="w-3.5 h-3.5 text-nia-600" /> Complete Activity Description
+                                  </span>
+                                  <p className="text-xs text-slate-900 leading-relaxed whitespace-pre-line font-medium">
+                                    {act.description}
+                                  </p>
+                                </div>
+
+                                {/* Complete Tangible Output */}
+                                <div className="bg-white p-3 rounded-xl border border-slate-200">
+                                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Tangible Output / Accomplishment
+                                  </span>
+                                  <p className="text-xs text-slate-900 leading-relaxed whitespace-pre-line font-medium">
+                                    {act.output}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* AI Explanation & Engineering Rationale */}
+                              {act.aiClassification && (
+                                <div className="p-3 bg-sky-50 rounded-xl border border-sky-200 text-xs space-y-1">
+                                  <div className="flex items-center gap-2 font-bold text-sky-900">
+                                    <Sparkles className="w-4 h-4 text-sky-600" />
+                                    <span>AI Engineering Rationale ({Math.round(act.aiClassification.confidenceScore * 100)}% Confidence)</span>
+                                  </div>
+                                  <p className="text-sky-800 text-[11px] leading-relaxed">
+                                    {act.aiClassification.rationale}
+                                  </p>
+                                  {act.aiClassification.missingInformation && (
+                                    <p className="text-amber-800 text-[11px] font-medium pt-1">
+                                      ⚠️ Notice: {act.aiClassification.missingInformation}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Metadata & Remarks */}
+                              <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1">
+                                <div className="flex items-center gap-3">
+                                  <span>Logged: <strong className="text-slate-700">{act.activityDate}</strong></span>
+                                  <span>Time: <strong className="text-slate-700">{act.timeSpentHours || 4.0} hours</strong></span>
+                                  <span>Category: <strong className="text-slate-700">{act.category}</strong></span>
+                                </div>
+                                {act.remarks && (
+                                  <div className="text-slate-600">
+                                    <strong>Remarks:</strong> {act.remarks}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          className="text-xs py-1 px-2.5 h-7 bg-sky-600 hover:bg-sky-700"
-                          leftIcon={<Check className="w-3 h-3" />}
-                          onClick={() => confirmClassification(act.id, act.aiClassification!.suggestedCommitmentId)}
-                        >
-                          Confirm
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="text-xs py-1 px-2.5 h-7"
-                          leftIcon={<X className="w-3 h-3" />}
-                          onClick={() => rejectClassification(act.id)}
-                        >
-                          Change
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                        {act.category}
-                      </span>
-                      <span className="text-[11px] text-slate-500 truncate max-w-xs">
-                        Project: {act.project || 'General'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleDuplicate(act)}
-                        className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100"
-                        title="Duplicate with new date"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(act)}
-                        className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100"
-                        title="Edit activity"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm('Move this activity to trash? It can be restored within 90 days.')) {
-                            deleteActivity(act.id);
-                          }
-                        }}
-                        className="p-1 text-rose-400 hover:text-rose-600 rounded hover:bg-rose-50"
-                        title="Delete activity"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })
-          )}
-        </div>
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       ) : (
-        /* Calendar View */
+        /* Calendar / Date Groups View */
         <div className="space-y-4">
           <Card padding="md">
             <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
@@ -571,28 +782,50 @@ export const ActivitiesPage: React.FC = () => {
                 .reverse()
                 .map((dateStr) => {
                   const dayActs = filteredActivities.filter((a) => a.activityDate === dateStr);
-                  const totalHours = dayActs.reduce((acc, curr) => acc + (curr.timeSpentHours || 0), 0);
+                  const totalHours = dayActs.reduce(
+                    (acc, curr) => acc + (curr.timeSpentHours || 0),
+                    0
+                  );
 
                   return (
-                    <div key={dateStr} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <div
+                      key={dateStr}
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200"
+                    >
                       <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-2">
-                        <span className="font-semibold text-xs text-slate-900 font-mono">{dateStr}</span>
+                        <span className="font-semibold text-xs text-slate-900 font-mono">
+                          {dateStr}
+                        </span>
                         <div className="flex items-center gap-2">
-                          <Badge variant="blue" size="sm">{dayActs.length} logs</Badge>
-                          <span className="text-[11px] text-slate-500 font-medium">{totalHours} total hrs</span>
+                          <Badge variant="blue" size="sm">
+                            {dayActs.length} logs
+                          </Badge>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {totalHours} total hrs
+                          </span>
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         {dayActs.map((act) => (
-                          <div key={act.id} className="p-2 rounded-lg bg-white border border-slate-100 text-xs flex justify-between items-center">
+                          <div
+                            key={act.id}
+                            className="p-2.5 rounded-lg bg-white border border-slate-200 text-xs flex justify-between items-center"
+                          >
                             <div className="truncate max-w-xl">
-                              <span className="font-semibold text-slate-800">{act.category}: </span>
+                              <span className="font-semibold text-slate-800">
+                                [{act.project || 'General'}] {act.category}:{' '}
+                              </span>
                               <span className="text-slate-600">{act.description}</span>
                             </div>
-                            <Badge variant={act.status === 'COMPLETED' ? 'emerald' : 'blue'} size="sm">
-                              {act.status}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={act.status === 'COMPLETED' ? 'emerald' : 'blue'}
+                                size="sm"
+                              >
+                                {act.status}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>

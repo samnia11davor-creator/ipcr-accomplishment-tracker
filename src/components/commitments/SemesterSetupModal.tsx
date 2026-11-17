@@ -9,7 +9,6 @@ import {
   HelpCircle,
   CheckSquare,
   Square,
-  DollarSign,
   UserCheck,
 } from 'lucide-react';
 import { NIA_SPMS_MASTER_CATALOG, NiaCatalogItem } from '@/data/niaMasterCatalog';
@@ -87,17 +86,6 @@ export const SemesterSetupModal: React.FC<SemesterSetupModalProps> = ({
       [code]: {
         ...prev[code],
         successIndicator: text,
-      },
-    }));
-  };
-
-  const handleBudgetChange = (code: string, budgetStr: string) => {
-    const budget = budgetStr ? Number(budgetStr) : null;
-    setIndicatorsState((prev) => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        allottedBudget: budget,
       },
     }));
   };
@@ -574,22 +562,7 @@ export const SemesterSetupModal: React.FC<SemesterSetupModalProps> = ({
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        {/* Allotted Budget */}
-                        <div>
-                          <label className="text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                            <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                            Allotted Budget (PHP, Optional)
-                          </label>
-                          <input
-                            type="number"
-                            value={currentState.allottedBudget !== null ? currentState.allottedBudget : ''}
-                            onChange={(e) => handleBudgetChange(item.code, e.target.value)}
-                            placeholder="e.g. 1200000"
-                            className="w-full text-xs rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50/50 focus:bg-white focus:ring-nia-500 focus:border-nia-500"
-                          />
-                        </div>
-
+                      <div className="pt-1">
                         {/* Accountable Division / Section */}
                         <div>
                           <label className="text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">

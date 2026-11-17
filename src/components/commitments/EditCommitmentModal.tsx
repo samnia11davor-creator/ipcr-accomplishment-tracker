@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, FileText, DollarSign, UserCheck } from 'lucide-react';
+import { X, CheckCircle2, FileText, UserCheck } from 'lucide-react';
 import { IpcrCommitment } from '@/types';
 import { Button } from '@/components/common/Button';
 
@@ -18,9 +18,6 @@ export const EditCommitmentModal: React.FC<EditCommitmentModalProps> = ({
 }) => {
   const [successIndicator, setSuccessIndicator] = useState(commitment.successIndicator);
   const [target, setTarget] = useState(commitment.target);
-  const [allottedBudget, setAllottedBudget] = useState<string>(
-    commitment.allottedBudget !== null ? String(commitment.allottedBudget) : ''
-  );
   const [accountableDivision, setAccountableDivision] = useState(commitment.accountableDivision);
 
   if (!isOpen) return null;
@@ -31,7 +28,6 @@ export const EditCommitmentModal: React.FC<EditCommitmentModalProps> = ({
       ...commitment,
       successIndicator: successIndicator.trim(),
       target: target.trim() || successIndicator.trim(),
-      allottedBudget: allottedBudget ? Number(allottedBudget) : null,
       accountableDivision: accountableDivision.trim(),
     });
     onClose();
@@ -91,34 +87,18 @@ export const EditCommitmentModal: React.FC<EditCommitmentModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Allotted Budget */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-slate-400" /> Allotted Budget (PHP)
-              </label>
-              <input
-                type="number"
-                value={allottedBudget}
-                onChange={(e) => setAllottedBudget(e.target.value)}
-                placeholder="e.g. 1200000"
-                className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-nia-500 focus:border-nia-500 bg-slate-50/50"
-              />
-            </div>
-
-            {/* Accountable Division / Section */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-slate-400" /> Accountable Division / Personnel
-              </label>
-              <input
-                type="text"
-                value={accountableDivision}
-                onChange={(e) => setAccountableDivision(e.target.value)}
-                placeholder="Planning and Design Section / Civil Engineer"
-                className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-nia-500 focus:border-nia-500 bg-slate-50/50"
-              />
-            </div>
+          {/* Accountable Division / Section */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-slate-400" /> Accountable Division / Personnel
+            </label>
+            <input
+              type="text"
+              value={accountableDivision}
+              onChange={(e) => setAccountableDivision(e.target.value)}
+              placeholder="Planning and Design Section / Civil Engineer"
+              className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-nia-500 focus:border-nia-500 bg-slate-50/50"
+            />
           </div>
 
           {/* Action buttons */}

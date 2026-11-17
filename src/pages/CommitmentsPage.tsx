@@ -11,7 +11,6 @@ import {
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
-import { formatCurrency } from '@/lib/utils';
 import { useApp } from '@/contexts/AppContext';
 import { IpcrCommitment } from '@/types';
 import { SemesterSetupModal } from '@/components/commitments/SemesterSetupModal';
@@ -104,11 +103,6 @@ export const CommitmentsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-            {com.allottedBudget && (
-              <Badge variant="cyan" size="sm">
-                Budget: {formatCurrency(com.allottedBudget)}
-              </Badge>
-            )}
             <button
               onClick={() => setEditingCommitment(com)}
               className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5 transition-colors"
