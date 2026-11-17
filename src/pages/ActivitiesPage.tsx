@@ -23,6 +23,7 @@ import {
   FileSpreadsheet,
   Download,
   Upload,
+  Filter,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -87,6 +88,7 @@ export const ActivitiesPage: React.FC = () => {
   });
 
   // Advanced Filtering matching DOC LOG SHEET headers
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
@@ -497,7 +499,7 @@ export const ActivitiesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
             Daily Activity Logsheet
@@ -510,16 +512,46 @@ export const ActivitiesPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Real-time Free Tier Memory Monitor */}
-          <StorageMonitorPill variant="compact" />
+        {/* Clean, Non-wrapping Action Toolbar */}
+        <div className="flex items-center gap-2.5 shrink-0 flex-nowrap self-start lg:self-auto">
+          {/* 1. Filter & Search Dropdown Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+              showFilters
+                ? 'bg-nia-800 text-white border-nia-800 shadow-sm'
+                : activeFiltersCount > 0
+                ? 'bg-nia-50 text-nia-900 border-nia-300 hover:bg-nia-100 shadow-xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-xs'
+            }`}
+            title={showFilters ? 'Hide search and filters' : 'Show search and filters'}
+          >
+            <Filter className={`w-3.5 h-3.5 ${showFilters ? 'text-white' : 'text-nia-600'}`} />
+            <span>Search & Filters</span>
+            {activeFiltersCount > 0 && (
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  showFilters ? 'bg-white text-nia-900' : 'bg-nia-700 text-white'
+                }`}
+              >
+                {activeFiltersCount}
+              </span>
+            )}
+            {showFilters ? (
+              <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 ml-0.5 text-slate-400" />
+            )}
+          </button>
 
+          {/* 2. View Mode Segmented Toggle */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
               onClick={() => setViewMode('table')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -530,7 +562,7 @@ export const ActivitiesPage: React.FC = () => {
               onClick={() => setViewMode('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -539,6 +571,7 @@ export const ActivitiesPage: React.FC = () => {
             </button>
           </div>
 
+          {/* 3. Primary Action Button */}
           <Button
             variant="primary"
             size="sm"
@@ -558,7 +591,7 @@ export const ActivitiesPage: React.FC = () => {
       </div>
 
       {/* Quick Summary Pill Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Filtered Records</span>
@@ -591,6 +624,16 @@ export const ActivitiesPage: React.FC = () => {
             <div className="text-xl font-bold text-amber-700 mt-0.5">{pendingAiCount} Pending</div>
           </div>
           <Sparkles className="w-5 h-5 text-amber-500" />
+        </div>
+
+        {/* Free Tier Storage Card */}
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between col-span-2 sm:col-span-1">
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Free Tier Storage</span>
+            <div className="mt-1">
+              <StorageMonitorPill variant="compact" className="w-full justify-between" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -970,216 +1013,268 @@ export const ActivitiesPage: React.FC = () => {
         </Card>
       )}
 
-      {/* CLEAN, WELL-ORGANIZED & BALANCED FILTER BAR */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        {/* Top Filter Bar: Search + Active Summary */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="relative w-full sm:max-w-md">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search description, output deliverable, project name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 bg-slate-50/70"
-            />
-          </div>
+      {/* COLLAPSIBLE FILTER & SEARCH TRAY */}
+      {showFilters && (
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 animate-in fade-in duration-150">
+          {/* Top Filter Bar: Search + Active Summary */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="relative w-full sm:max-w-md">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search description, output deliverable, project name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 bg-slate-50/70"
+              />
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {activeFiltersCount > 0 ? (
-              <span className="px-3 py-1 rounded-full bg-nia-100 text-nia-800 text-xs font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-nia-600 animate-pulse" />
-                {activeFiltersCount} active filter{activeFiltersCount > 1 ? 's' : ''} applied
-              </span>
-            ) : (
-              <span className="text-xs text-slate-400">All filters default</span>
-            )}
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              {activeFiltersCount > 0 ? (
+                <span className="px-3 py-1 rounded-full bg-nia-100 text-nia-800 text-xs font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-nia-600 animate-pulse" />
+                  {activeFiltersCount} active filter{activeFiltersCount > 1 ? 's' : ''} applied
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">All filters default</span>
+              )}
 
-            {activeFiltersCount > 0 && (
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={resetAllFilters}
+                  className="text-xs text-slate-600 hover:text-rose-600 flex items-center gap-1 font-semibold transition-colors bg-slate-100 hover:bg-rose-50 px-3 py-1 rounded-lg border border-slate-200"
+                  title="Reset all filters"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                  Reset All
+                </button>
+              )}
+
               <button
-                onClick={resetAllFilters}
-                className="text-xs text-slate-600 hover:text-rose-600 flex items-center gap-1 font-semibold transition-colors bg-slate-100 hover:bg-rose-50 px-3 py-1 rounded-lg border border-slate-200"
-                title="Reset all filters"
+                type="button"
+                onClick={() => setShowFilters(false)}
+                className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-semibold transition-colors bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1 rounded-lg border border-slate-200"
+                title="Hide filter options"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                Reset All
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Hide</span>
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Balanced 4-Column Dropdown Grid with generous spacing and Sheet2 selections */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
-          {/* 1. Project Filter */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Project Name ({uniqueProjectsForFilter.length})
-            </label>
-            <select
-              value={filterProject}
-              onChange={(e) => setFilterProject(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All Projects ({uniqueProjectsForFilter.length})</option>
-              {uniqueProjectsForFilter.map((proj) => (
-                <option key={proj} value={proj}>
-                  {proj}
-                </option>
-              ))}
-            </select>
+            </div>
           </div>
 
-          {/* 2. Source / Office Origin */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Source / Office Origin
-            </label>
-            <select
-              value={filterSource}
-              onChange={(e) => setFilterSource(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All Sources & Offices</option>
-              {SHEET2_OFFICE_SOURCES.map((src) => (
-                <option key={src} value={src}>
-                  {src}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 3. Category / Doc Type */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Category / Doc Type
-            </label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All Categories & Doc Types</option>
-              <optgroup label="Official Sheet2 Doc Types">
-                {SHEET2_DOC_TYPES.map((dt) => (
-                  <option key={dt} value={dt}>
-                    {dt}
+          {/* Balanced 4-Column Dropdown Grid with generous spacing and Sheet2 selections */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+            {/* 1. Project Filter */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Project Name ({uniqueProjectsForFilter.length})
+              </label>
+              <select
+                value={filterProject}
+                onChange={(e) => setFilterProject(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All Projects ({uniqueProjectsForFilter.length})</option>
+                {uniqueProjectsForFilter.map((proj) => (
+                  <option key={proj} value={proj}>
+                    {proj}
                   </option>
                 ))}
-              </optgroup>
-              <optgroup label="Engineering Categories">
-                {BASE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+              </select>
+            </div>
+
+            {/* 2. Source / Office Origin */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Source / Office Origin
+              </label>
+              <select
+                value={filterSource}
+                onChange={(e) => setFilterSource(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All Sources & Offices</option>
+                {SHEET2_OFFICE_SOURCES.map((src) => (
+                  <option key={src} value={src}>
+                    {src}
                   </option>
                 ))}
-              </optgroup>
-            </select>
-          </div>
+              </select>
+            </div>
 
-          {/* 4. Date Duration Preset */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Date Duration
-            </label>
-            <select
-              value={dateRangePreset}
-              onChange={(e) => setDateRangePreset(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All Dates</option>
-              <option value="THIS_MONTH">This Month</option>
-              <option value="LAST_30">Last 30 Days</option>
-              <option value="SEM2">2nd Sem (Jul - Dec 2026)</option>
-              <option value="SEM1">1st Sem (Jan - Jun 2026)</option>
-              <option value="CUSTOM">Custom Date Range...</option>
-            </select>
-          </div>
+            {/* 3. Category / Doc Type */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Category / Doc Type
+              </label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All Categories & Doc Types</option>
+                <optgroup label="Official Sheet2 Doc Types">
+                  {SHEET2_DOC_TYPES.map((dt) => (
+                    <option key={dt} value={dt}>
+                      {dt}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Engineering Categories">
+                  {BASE_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
 
-          {/* 5. Calendar Year */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Calendar Year
-            </label>
-            <select
-              value={filterYear}
-              onChange={(e) => setFilterYear(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All CY</option>
-              {uniqueYears.map((yr) => (
-                <option key={yr} value={yr}>
-                  CY {yr}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* 4. Date Duration Preset */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Date Duration
+              </label>
+              <select
+                value={dateRangePreset}
+                onChange={(e) => setDateRangePreset(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All Dates</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_30">Last 30 Days</option>
+                <option value="SEM2">2nd Sem (Jul - Dec 2026)</option>
+                <option value="SEM1">1st Sem (Jan - Jun 2026)</option>
+                <option value="CUSTOM">Custom Date Range...</option>
+              </select>
+            </div>
 
-          {/* 6. Target IPCR Goal */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Target IPCR Goal
-            </label>
-            <select
-              value={filterCommitment}
-              onChange={(e) => setFilterCommitment(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All IPCR Goals</option>
-              {commitments.map((com) => (
-                <option key={com.id} value={com.id}>
-                  {com.commitmentCode} - {com.target.slice(0, 24)}...
-                </option>
-              ))}
-              <option value="UNCLASSIFIED">Unclassified</option>
-            </select>
-          </div>
+            {/* 5. Calendar Year */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Calendar Year
+              </label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All CY</option>
+                {uniqueYears.map((yr) => (
+                  <option key={yr} value={yr}>
+                    CY {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* 7. Status */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="ONGOING">Ongoing</option>
-              <option value="PENDING_AI">Awaiting AI Match</option>
-              <option value="DRAFT">Draft</option>
-            </select>
-          </div>
+            {/* 6. Target IPCR Goal */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Target IPCR Goal
+              </label>
+              <select
+                value={filterCommitment}
+                onChange={(e) => setFilterCommitment(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All IPCR Goals</option>
+                {commitments.map((com) => (
+                  <option key={com.id} value={com.id}>
+                    {com.commitmentCode} - {com.target.slice(0, 24)}...
+                  </option>
+                ))}
+                <option value="UNCLASSIFIED">Unclassified</option>
+              </select>
+            </div>
 
-          {/* 8. Custom Date Pickers */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
-              {dateRangePreset === 'CUSTOM' ? 'Custom Range (From - To)' : 'Date Mode'}
-            </label>
-            {dateRangePreset === 'CUSTOM' ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="w-1/2 text-xs rounded-xl border border-slate-200 py-1.5 px-2 bg-white text-slate-800 shadow-sm"
-                />
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="w-1/2 text-xs rounded-xl border border-slate-200 py-1.5 px-2 bg-white text-slate-800 shadow-sm"
-                />
-              </div>
-            ) : (
-              <div className="w-full text-xs py-2 px-3 bg-slate-50 text-slate-400 rounded-xl border border-slate-100 italic">
-                Preset active: {dateRangePreset === 'ALL' ? 'All dates' : dateRangePreset}
-              </div>
-            )}
+            {/* 7. Status */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-white focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 text-slate-800 font-medium shadow-sm"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="ONGOING">Ongoing</option>
+                <option value="PENDING_AI">Awaiting AI Match</option>
+                <option value="DRAFT">Draft</option>
+              </select>
+            </div>
+
+            {/* 8. Custom Date Pickers */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                {dateRangePreset === 'CUSTOM' ? 'Custom Range (From - To)' : 'Date Mode'}
+              </label>
+              {dateRangePreset === 'CUSTOM' ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-1/2 text-xs rounded-xl border border-slate-200 py-1.5 px-2 bg-white text-slate-800 shadow-sm"
+                  />
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-1/2 text-xs rounded-xl border border-slate-200 py-1.5 px-2 bg-white text-slate-800 shadow-sm"
+                  />
+                </div>
+              ) : (
+                <div className="w-full text-xs py-2 px-3 bg-slate-50 text-slate-400 rounded-xl border border-slate-100 italic">
+                  Preset active: {dateRangePreset === 'ALL' ? 'All dates' : dateRangePreset}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Active Filter Reminder Banner (When filter tray is collapsed) */}
+      {!showFilters && activeFiltersCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 px-4 rounded-xl bg-nia-50/90 border border-nia-200 text-xs text-nia-950 animate-in fade-in shadow-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="w-2 h-2 rounded-full bg-nia-600 animate-pulse" />
+            <span className="font-bold">
+              Active Filters ({activeFiltersCount}):
+            </span>
+            <span className="text-slate-700 text-[11px]">
+              {filterProject !== 'ALL' && <span className="mr-2.5">Project: <strong className="text-nia-800">{filterProject}</strong></span>}
+              {filterSource !== 'ALL' && <span className="mr-2.5">Origin: <strong className="text-nia-800">{filterSource}</strong></span>}
+              {filterCategory !== 'ALL' && <span className="mr-2.5">Doc Type: <strong className="text-nia-800">{filterCategory}</strong></span>}
+              {filterYear !== 'ALL' && <span className="mr-2.5">CY: <strong className="text-nia-800">{filterYear}</strong></span>}
+              {dateRangePreset !== 'ALL' && <span className="mr-2.5">Date: <strong className="text-nia-800">{dateRangePreset}</strong></span>}
+              {statusFilter !== 'ALL' && <span className="mr-2.5">Status: <strong className="text-nia-800">{statusFilter}</strong></span>}
+              {filterCommitment !== 'ALL' && <span className="mr-2.5">IPCR Goal: <strong className="text-nia-800">Filtered</strong></span>}
+              {searchQuery && <span className="mr-2.5">Search: <strong className="text-nia-800">"{searchQuery}"</strong></span>}
+              <span className="text-slate-500 font-medium">({filteredActivities.length} logs shown)</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setShowFilters(true)}
+              className="text-xs font-bold text-nia-700 hover:text-nia-900 underline flex items-center gap-1"
+            >
+              <span>Edit Filters</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
+              onClick={resetAllFilters}
+              className="text-xs font-bold text-rose-600 hover:text-rose-800 underline"
+            >
+              Reset All
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* OFFICIAL SPREADSHEET-GRADE ENGINEERING TABLE */}
       {viewMode === 'table' ? (

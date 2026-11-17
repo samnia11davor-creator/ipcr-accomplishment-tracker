@@ -25,7 +25,6 @@ import {
 } from '@/data/sheet2MasterData';
 import { AttachmentDropzone } from '@/components/common/AttachmentDropzone';
 import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
-import { StorageMonitorPill } from '@/components/common/StorageMonitorPill';
 
 export const DocumentsPage: React.FC = () => {
   const { documents, addDocument, updateDocument, deleteDocument } = useApp();
@@ -274,8 +273,7 @@ export const DocumentsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <StorageMonitorPill variant="compact" />
+        <div className="flex items-center gap-2.5 shrink-0 flex-nowrap self-start sm:self-auto">
           <Button
             variant="primary"
             size="sm"

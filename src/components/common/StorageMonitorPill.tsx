@@ -36,13 +36,12 @@ export const StorageMonitorPill: React.FC<StorageMonitorPillProps> = ({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className={`w-full text-left p-2.5 rounded-xl border transition-all ${
-            isCritical
+          className={`w-full text-left p-2.5 rounded-xl border transition-all ${isCritical
               ? 'bg-rose-950/40 border-rose-800 text-rose-300'
               : isWarning
-              ? 'bg-amber-950/40 border-amber-800 text-amber-300'
-              : 'bg-slate-800/60 border-slate-750 text-slate-300 hover:bg-slate-800'
-          } ${className}`}
+                ? 'bg-amber-950/40 border-amber-800 text-amber-300'
+                : 'bg-slate-800/60 border-slate-750 text-slate-300 hover:bg-slate-800'
+            } ${className}`}
         >
           <div className="flex items-center justify-between text-[11px] mb-1 font-semibold">
             <span className="flex items-center gap-1.5">
@@ -57,13 +56,12 @@ export const StorageMonitorPill: React.FC<StorageMonitorPillProps> = ({
           {/* Progress bar */}
           <div className="w-full bg-slate-700/80 rounded-full h-1.5 overflow-hidden mb-1.5">
             <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                isCritical
+              className={`h-full rounded-full transition-all duration-300 ${isCritical
                   ? 'bg-rose-500'
                   : isWarning
-                  ? 'bg-amber-500'
-                  : 'bg-emerald-500'
-              }`}
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
+                }`}
               style={{ width: `${Math.max(stats.percentUsed, 2)}%` }}
             />
           </div>
@@ -93,13 +91,12 @@ export const StorageMonitorPill: React.FC<StorageMonitorPillProps> = ({
         type="button"
         onClick={() => setIsModalOpen(true)}
         title="Click to view Free Tier storage breakdown and management"
-        className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs transition-all ${
-          isCritical
+        className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs transition-all ${isCritical
             ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100'
             : isWarning
-            ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
-            : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200/70 hover:border-slate-300'
-        } ${className}`}
+              ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
+              : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200/70 hover:border-slate-300'
+          } ${className}`}
       >
         <HardDrive className={`w-3.5 h-3.5 ${isCritical ? 'text-rose-600' : isWarning ? 'text-amber-600' : 'text-slate-500'}`} />
         <span className="font-medium text-[11px]">

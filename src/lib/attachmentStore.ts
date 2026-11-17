@@ -250,3 +250,4 @@ export async function purgeAttachmentsByIds(attachmentIds: string[]): Promise<nu
     tx.onerror = () => resolve(0);
   });
 }
+
