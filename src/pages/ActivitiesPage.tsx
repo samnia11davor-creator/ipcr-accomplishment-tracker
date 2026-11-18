@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   Table as TableIcon,
@@ -71,7 +72,30 @@ export const ActivitiesPage: React.FC = () => {
     rejectClassification,
   } = useApp();
 
-  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'timeline'>('table');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlView = searchParams.get('view');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'timeline'>(() => {
+    if (urlView === 'calendar' || urlView === 'timeline') return urlView;
+    return 'table';
+  });
+
+  // Sync URL parameters into viewMode
+  useEffect(() => {
+    const v = searchParams.get('view');
+    if (v === 'calendar' || v === 'timeline' || v === 'table') {
+      setViewMode(v);
+    }
+  }, [searchParams]);
+
+  const handleViewChange = (mode: 'table' | 'calendar' | 'timeline') => {
+    setViewMode(mode);
+    if (mode === 'table') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ view: mode });
+    }
+  };
+
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -506,13 +530,18 @@ export const ActivitiesPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            Daily Activity Logsheet
+            Daily Activities & Field Work
             <Badge variant="blue" size="sm" className="font-normal font-sans">
               Sheet2 Verified
             </Badge>
+            {viewMode === 'calendar' && (
+              <Badge variant="emerald" size="sm" className="font-semibold">
+                SM7 POW Sync
+              </Badge>
+            )}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Spreadsheet-grade daily work monitoring • Preloaded with official NIA Region XI projects & doc types from your Sheet2 master list
+            Spreadsheet logsheet & monthly work calendar • Preloaded with official NIA Region XI projects & doc types supplying your IPCR goals
           </p>
         </div>
 
@@ -549,10 +578,10 @@ export const ActivitiesPage: React.FC = () => {
             )}
           </button>
 
-          {/* 2. View Mode Segmented Toggle */}
+          {/* 2. View Mode Segmented Toggle: Table View, Calendar & Field Work, Date Groups */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
-              onClick={() => setViewMode('table')}
+              onClick={() => handleViewChange('table')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'table'
                   ? 'bg-white text-slate-900 shadow-xs'
@@ -563,7 +592,7 @@ export const ActivitiesPage: React.FC = () => {
               Table View
             </button>
             <button
-              onClick={() => setViewMode('calendar')}
+              onClick={() => handleViewChange('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'calendar'
                   ? 'bg-white text-emerald-950 font-bold shadow-xs'
@@ -571,10 +600,10 @@ export const ActivitiesPage: React.FC = () => {
               }`}
             >
               <Calendar className="w-3.5 h-3.5 text-emerald-700" />
-              Calendar (Sheet View)
+              Calendar & Field Work
             </button>
             <button
-              onClick={() => setViewMode('timeline')}
+              onClick={() => handleViewChange('timeline')}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === 'timeline'
                   ? 'bg-white text-slate-900 shadow-xs'
