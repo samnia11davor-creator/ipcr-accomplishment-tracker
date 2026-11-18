@@ -12,6 +12,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { useApp } from '@/contexts/AppContext';
 import { DailyActivity, TaskAttachment } from '@/types';
+import { LogDailyTaskModal } from './LogDailyTaskModal';
 import { LogFieldWorkModal } from './LogFieldWorkModal';
 import { DayDetailsModal } from './DayDetailsModal';
 import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
@@ -57,6 +58,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
   const [currentMonth, setCurrentMonth] = useState<number>(10); // 10 = November (0-indexed)
 
   // Interactive modal states
+  const [isDailyTaskModalOpen, setIsDailyTaskModalOpen] = useState(false);
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string>('');
   const [isDayDetailsOpen, setIsDayDetailsOpen] = useState(false);
@@ -205,10 +207,23 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
     setIsDayDetailsOpen(true);
   };
 
-  const handleOpenFieldWork = (date?: string) => {
+  const handleOpenDailyTask = (date?: string) => {
+    const defaultDay = String(Math.min(new Date().getDate(), 28)).padStart(2, '0');
     setSelectedDateForModal(
       date ||
-        `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`
+        `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${defaultDay}`
+    );
+    setIsDailyTaskModalOpen(true);
+    if (onOpenDailyActivityModal) {
+      onOpenDailyActivityModal(date);
+    }
+  };
+
+  const handleOpenFieldWork = (date?: string) => {
+    const defaultDay = String(Math.min(new Date().getDate(), 28)).padStart(2, '0');
+    setSelectedDateForModal(
+      date ||
+        `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${defaultDay}`
     );
     setIsFieldWorkModalOpen(true);
   };
@@ -258,28 +273,27 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Direct Field Work Logger */}
+            {/* Direct Daily Activity / Document Task Logger */}
             <Button
               variant="primary"
               size="sm"
-              onClick={() => handleOpenFieldWork()}
-              leftIcon={<Compass className="w-4 h-4" />}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-xs"
+              onClick={() => handleOpenDailyTask()}
+              leftIcon={<Plus className="w-4 h-4" />}
+              className="bg-nia-700 hover:bg-nia-800 text-white font-semibold shadow-xs"
             >
-              + Log Field Work (SM7 POW)
+              + Log Work / Document Task
             </Button>
 
-            {/* Direct Daily Activity Logger */}
-            {onOpenDailyActivityModal && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenDailyActivityModal()}
-                leftIcon={<Plus className="w-4 h-4" />}
-              >
-                + Log Daily Document
-              </Button>
-            )}
+            {/* Direct Field Work Logger */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenFieldWork()}
+              leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
+              className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold shadow-xs"
+            >
+              + Log Field Work (SM7)
+            </Button>
           </div>
         </div>
 
@@ -403,35 +417,50 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
                   </span>
 
                   {/* Task Count Badge for Day */}
-                  {hasActivities ? (
-                    <div className="flex items-center gap-1">
-                      {dayFieldWorks.length > 0 && (
-                        <span
-                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5"
-                          title={`${dayFieldWorks.length} Field Work(s)`}
-                        >
-                          <Compass className="w-2.5 h-2.5 text-emerald-700" />
-                          <span>{dayFieldWorks.length}</span>
+                  <div className="flex items-center gap-1">
+                    {hasActivities && (
+                      <>
+                        {dayFieldWorks.length > 0 && (
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5"
+                            title={`${dayFieldWorks.length} Field Work(s)`}
+                          >
+                            <Compass className="w-2.5 h-2.5 text-emerald-700" />
+                            <span>{dayFieldWorks.length}</span>
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {dayActs.length} {dayActs.length === 1 ? 'task' : 'tasks'}
                         </span>
-                      )}
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                        {dayActs.length} {dayActs.length === 1 ? 'task' : 'tasks'}
-                      </span>
+                      </>
+                    )}
+
+                    {/* Quick action buttons on hover for every cell */}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity ml-auto">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDailyTask(day.dateStr);
+                        }}
+                        className="p-1 rounded hover:bg-nia-100 text-nia-700 transition-colors"
+                        title="Add Document / Work Task on this date"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenFieldWork(day.dateStr);
+                        }}
+                        className="p-1 rounded hover:bg-emerald-100 text-emerald-700 transition-colors"
+                        title="Add Field Work (SM7) on this date"
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  ) : (
-                    /* Hover quick add button */
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenFieldWork(day.dateStr);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-emerald-50 text-emerald-600 transition-opacity"
-                      title="Log field work on this date"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  </div>
                 </div>
 
                 {/* Cell Body: Task Chips */}
@@ -482,6 +511,12 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
       </Card>
 
       {/* Interactive Modals */}
+      <LogDailyTaskModal
+        isOpen={isDailyTaskModalOpen}
+        onClose={() => setIsDailyTaskModalOpen(false)}
+        initialDate={selectedDateForModal}
+      />
+
       <LogFieldWorkModal
         isOpen={isFieldWorkModalOpen}
         onClose={() => setIsFieldWorkModalOpen(false)}
@@ -494,9 +529,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
         dateStr={selectedDayForDetails}
         activities={activities}
         onOpenFieldWorkModal={(d) => handleOpenFieldWork(d)}
-        onOpenActivityModal={(d) => {
-          if (onOpenDailyActivityModal) onOpenDailyActivityModal(d);
-        }}
+        onOpenActivityModal={(d) => handleOpenDailyTask(d)}
         onViewAttachment={(att) => setViewingAttachment(att)}
       />
 

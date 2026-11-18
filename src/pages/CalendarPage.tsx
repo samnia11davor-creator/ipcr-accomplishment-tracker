@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import {
   Compass,
   Award,
+  Plus,
 } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
 import { LogFieldWorkModal } from '@/components/calendar/LogFieldWorkModal';
+import { LogDailyTaskModal } from '@/components/calendar/LogDailyTaskModal';
 import { useApp } from '@/contexts/AppContext';
 
 export const CalendarPage: React.FC = () => {
   const { activities } = useApp();
+  const [isDailyTaskOpen, setIsDailyTaskOpen] = useState(false);
   const [isFieldWorkOpen, setIsFieldWorkOpen] = useState(false);
 
   const activeActivities = activities.filter((a) => !a.isDeleted);
@@ -43,9 +46,18 @@ export const CalendarPage: React.FC = () => {
           <Button
             variant="primary"
             size="md"
+            onClick={() => setIsDailyTaskOpen(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            + Log Work / Document Task
+          </Button>
+
+          <Button
+            variant="outline"
+            size="md"
             onClick={() => setIsFieldWorkOpen(true)}
-            leftIcon={<Compass className="w-4 h-4" />}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-xs"
+            leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
+            className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold shadow-xs"
           >
             + Log Field Work (SM7 POW)
           </Button>
@@ -95,6 +107,12 @@ export const CalendarPage: React.FC = () => {
       <LogFieldWorkModal
         isOpen={isFieldWorkOpen}
         onClose={() => setIsFieldWorkOpen(false)}
+      />
+
+      {/* Daily Work / Document Task Modal */}
+      <LogDailyTaskModal
+        isOpen={isDailyTaskOpen}
+        onClose={() => setIsDailyTaskOpen(false)}
       />
     </div>
   );

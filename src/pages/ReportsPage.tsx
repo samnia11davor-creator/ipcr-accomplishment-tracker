@@ -169,9 +169,8 @@ export const ReportsPage: React.FC = () => {
                 <button
                   key={com.id}
                   onClick={() => setSelectedCommitmentId(com.id)}
-                  className={`w-full p-3.5 text-left transition-colors flex items-start justify-between ${
-                    isSelected ? 'bg-nia-50/80 border-l-4 border-l-nia-600' : 'hover:bg-slate-50'
-                  }`}
+                  className={`w-full p-3.5 text-left transition-colors flex items-start justify-between ${isSelected ? 'bg-nia-50/80 border-l-4 border-l-nia-600' : 'hover:bg-slate-50'
+                    }`}
                 >
                   <div className="pr-2">
                     <span className="font-mono text-xs font-bold text-nia-700">{com.commitmentCode}</span>

@@ -105,12 +105,37 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
           {dayActivities.length === 0 ? (
             <div className="text-center py-10 px-4">
               <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                <Calendar className="w-6 h-6" />
+                <Calendar className="w-6 h-6 text-nia-600" />
               </div>
-              <h4 className="text-sm font-bold text-slate-700">No work logged for this date</h4>
+              <h4 className="text-sm font-bold text-slate-800">No work logged for this date</h4>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Use the buttons below to record a field investigation (for SM7 POW) or a regular engineering document logsheet entry.
+                Click below to add a quantifiable document task (drawings, review memos, reports) or log on-site field validation for SM7 POW.
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    onClose();
+                    onOpenActivityModal(dateStr);
+                  }}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  + Log Document / Work Task
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    onClose();
+                    onOpenFieldWorkModal(dateStr);
+                  }}
+                  leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
+                  className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold"
+                >
+                  + Log Field Work (SM7)
+                </Button>
+              </div>
             </div>
           ) : (
             dayActivities.map((act) => {
@@ -259,7 +284,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
 
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="primary"
               size="sm"
               onClick={() => {
                 onClose();
@@ -267,7 +292,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
               }}
               leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              Log Document Task
+              + Log Document Task
             </Button>
 
             <Button
@@ -280,7 +305,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
               leftIcon={<Compass className="w-3.5 h-3.5" />}
               className="bg-emerald-700 hover:bg-emerald-800 text-white"
             >
-              Log Field Work (SM7)
+              + Log Field Work (SM7)
             </Button>
           </div>
         </div>
@@ -288,3 +313,4 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
     </div>
   );
 };
+
