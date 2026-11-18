@@ -12,11 +12,13 @@ import {
   Plus,
   Building2,
   FolderGit2,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { DailyActivity, TaskAttachment } from '@/types';
 import { useApp } from '@/contexts/AppContext';
+import { getDtrForDate } from '@/lib/dtrParser';
 
 interface DayDetailsModalProps {
   isOpen: boolean;
@@ -49,6 +51,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
   const docTasks = dayActivities.filter((a) => !a.isFieldWork);
   const totalHours = dayActivities.reduce((acc, a) => acc + (a.timeSpentHours || 0), 0);
   const fieldWorkUnits = fieldWorks.reduce((acc, a) => acc + (a.fieldWorkCount || 1), 0);
+  const dtrInfo = getDtrForDate(dateStr);
 
   // Format date nicely
   const parsedDate = new Date(`${dateStr}T12:00:00`);
@@ -99,6 +102,29 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
             <span>{totalHours.toFixed(1)} hrs total</span>
           </div>
         </div>
+
+        {/* Biometric Guard House DTR Card */}
+        {dtrInfo && (
+          <div className="mx-6 mt-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-xs text-emerald-950 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-emerald-900 block">
+                  Official Biometric Record ({dtrInfo.primaryMachine})
+                </span>
+                <span className="text-[11px] text-emerald-800">
+                  Time In: <strong>{dtrInfo.timeIn || '—'}</strong> &nbsp;•&nbsp; Time Out: <strong>{dtrInfo.timeOut || '—'}</strong>
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-emerald-700 font-bold uppercase block">Credited Hours</span>
+              <span className="font-mono font-bold text-emerald-900 text-sm">{dtrInfo.totalHours.toFixed(1)} hrs</span>
+            </div>
+          </div>
+        )}
 
         {/* Content List */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4">

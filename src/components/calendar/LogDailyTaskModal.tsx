@@ -10,11 +10,13 @@ import {
   FileText,
   CheckCircle2,
   Paperclip,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { AttachmentDropzone } from '@/components/common/AttachmentDropzone';
 import { useApp } from '@/contexts/AppContext';
+import { getDtrForDate } from '@/lib/dtrParser';
 import {
   SHEET2_PROJECTS,
   SHEET2_DOC_TYPES,
@@ -64,6 +66,8 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
   const [remarks, setRemarks] = useState<string>('');
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const dtrInfo = getDtrForDate(activityDate);
 
   // Update date if initialDate changes
   useEffect(() => {
@@ -170,6 +174,20 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
                 onChange={(e) => setActivityDate(e.target.value)}
                 className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800"
               />
+              {dtrInfo && (
+                <button
+                  type="button"
+                  onClick={() => setTimeSpent(String(dtrInfo.totalHours))}
+                  className="mt-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-lg flex items-center justify-between w-full transition-colors"
+                  title="Click to apply official DTR hours"
+                >
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>DTR: {dtrInfo.timeIn} - {dtrInfo.timeOut}</span>
+                  </span>
+                  <span className="underline font-bold text-emerald-900">Set {dtrInfo.totalHours} hrs</span>
+                </button>
+              )}
             </div>
 
             <div>

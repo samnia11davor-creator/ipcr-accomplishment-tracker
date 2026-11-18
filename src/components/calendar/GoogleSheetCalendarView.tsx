@@ -7,6 +7,7 @@ import {
   Clock,
   Award,
   Maximize2,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -16,6 +17,8 @@ import { LogDailyTaskModal } from './LogDailyTaskModal';
 import { LogFieldWorkModal } from './LogFieldWorkModal';
 import { DayDetailsModal } from './DayDetailsModal';
 import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
+import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
+import { getSavedDtrSummaries, DailyDtrSummary } from '@/lib/dtrParser';
 
 interface GoogleSheetCalendarViewProps {
   onOpenDailyActivityModal?: (date?: string) => void;
@@ -60,10 +63,19 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
   // Interactive modal states
   const [isDailyTaskModalOpen, setIsDailyTaskModalOpen] = useState(false);
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
+  const [isDtrModalOpen, setIsDtrModalOpen] = useState(false);
+  const [dtrVersion, setDtrVersion] = useState(0);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string>('');
   const [isDayDetailsOpen, setIsDayDetailsOpen] = useState(false);
   const [selectedDayForDetails, setSelectedDayForDetails] = useState<string>('');
   const [viewingAttachment, setViewingAttachment] = useState<TaskAttachment | null>(null);
+
+  const dtrMap = useMemo(() => {
+    const list = getSavedDtrSummaries();
+    const map = new Map<string, DailyDtrSummary>();
+    list.forEach((item) => map.set(item.date, item));
+    return map;
+  }, [dtrVersion, activities]);
 
   // Month navigation helpers
   const handlePrevMonth = () => {
@@ -294,6 +306,17 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
             >
               + Log Field Work (SM7)
             </Button>
+
+            {/* Sync Office DTR / Biometrics */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDtrModalOpen(true)}
+              leftIcon={<ShieldCheck className="w-4 h-4 text-emerald-700" />}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold shadow-xs"
+            >
+              Sync Office DTR
+            </Button>
           </div>
         </div>
 
@@ -495,6 +518,22 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
                       +{dayActs.length - 2} more...
                     </div>
                   )}
+
+                  {/* Biometric Guard House DTR Time Stamp */}
+                  {dtrMap.get(day.dateStr) && (
+                    <div
+                      className="px-1.5 py-0.5 rounded bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-[10px] font-mono flex items-center justify-between"
+                      title={`Official Biometrics (${dtrMap.get(day.dateStr)?.primaryMachine}): In ${dtrMap.get(day.dateStr)?.timeIn || '—'} | Out ${dtrMap.get(day.dateStr)?.timeOut || '—'}`}
+                    >
+                      <span className="flex items-center gap-1 font-semibold text-emerald-900 truncate">
+                        <Clock className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                        {dtrMap.get(day.dateStr)?.timeIn} - {dtrMap.get(day.dateStr)?.timeOut || '...'}
+                      </span>
+                      <span className="text-[9px] text-emerald-700 font-bold font-sans shrink-0 ml-1">
+                        Bio1
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Cell Footer: Hours */}
@@ -531,6 +570,13 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
         onOpenFieldWorkModal={(d) => handleOpenFieldWork(d)}
         onOpenActivityModal={(d) => handleOpenDailyTask(d)}
         onViewAttachment={(att) => setViewingAttachment(att)}
+      />
+
+      {/* NIA Biometrics & DTR Sync Modal */}
+      <DtrSyncModal
+        isOpen={isDtrModalOpen}
+        onClose={() => setIsDtrModalOpen(false)}
+        onSyncComplete={() => setDtrVersion((v) => v + 1)}
       />
 
       {viewingAttachment && (

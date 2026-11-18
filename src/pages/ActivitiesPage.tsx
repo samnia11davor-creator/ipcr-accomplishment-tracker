@@ -26,6 +26,7 @@ import {
   Upload,
   Filter,
   Compass,
+  ShieldCheck,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -45,6 +46,7 @@ import { saveAttachment, deleteAttachment } from '@/lib/attachmentStore';
 import { formatBytes } from '@/lib/storageMonitor';
 import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
 import { LogFieldWorkModal } from '@/components/calendar/LogFieldWorkModal';
+import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
 
 const BASE_CATEGORIES = [
   'Detailed Engineering',
@@ -97,6 +99,7 @@ export const ActivitiesPage: React.FC = () => {
   };
 
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
+  const [isDtrModalOpen, setIsDtrModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -626,7 +629,18 @@ export const ActivitiesPage: React.FC = () => {
             + Field Work (SM7)
           </Button>
 
-          {/* 4. Primary Action Button */}
+          {/* 4. Sync Office DTR */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsDtrModalOpen(true)}
+            leftIcon={<ShieldCheck className="w-4 h-4 text-emerald-700" />}
+            className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold"
+          >
+            Sync DTR
+          </Button>
+
+          {/* 5. Primary Action Button */}
           <Button
             variant="primary"
             size="sm"
@@ -1862,6 +1876,12 @@ export const ActivitiesPage: React.FC = () => {
       <LogFieldWorkModal
         isOpen={isFieldWorkModalOpen}
         onClose={() => setIsFieldWorkModalOpen(false)}
+      />
+
+      {/* NIA Biometrics & DTR Sync Modal */}
+      <DtrSyncModal
+        isOpen={isDtrModalOpen}
+        onClose={() => setIsDtrModalOpen(false)}
       />
 
       {/* Attachment Lightbox / Document Viewer Modal */}
