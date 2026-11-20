@@ -496,6 +496,11 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
                       title={`Field Work: [${fw.project}] ${fw.output}`}
                     >
                       <span className="font-bold text-emerald-800">🌾 [{fw.project || 'Field'}] </span>
+                      {fw.durationDays && fw.durationDays > 1 && (
+                        <span className="inline-block px-1 rounded text-[9px] font-bold bg-emerald-200/80 text-emerald-900 mr-1 font-mono">
+                          Day {fw.tripDayIndex || 1}/{fw.durationDays}
+                        </span>
+                      )}
                       <span>{fw.fieldWorkType || fw.output}</span>
                     </div>
                   ))}

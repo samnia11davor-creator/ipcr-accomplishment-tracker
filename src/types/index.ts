@@ -191,6 +191,11 @@ export interface DailyActivity extends BaseEntity {
   fieldWorkType?: string;          // e.g. "Site Inspection", "Field Validation for POW", "Survey Check"
   siteLocation?: string;           // Specific barangay / river / dam site / stationing
   jointWith?: string;              // e.g. "Provincial Agri, IMO Engineers, IA officers"
+  startDate?: string;              // YYYY-MM-DD for multi-day trips
+  endDate?: string;                // YYYY-MM-DD for multi-day trips
+  durationDays?: number;           // Total days in multi-day trip
+  tripDayIndex?: number;           // 1-based index (e.g. Day 1, Day 2)
+  tripGroupId?: string;            // UUID linking all days of the same field mission
 }
 
 // ---------------------------------------------------------------------------
