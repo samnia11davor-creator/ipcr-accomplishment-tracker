@@ -5,7 +5,6 @@ import {
   Building2,
   FolderGit2,
   Layers,
-  Clock,
   FileText,
   CheckCircle2,
   Paperclip,
@@ -60,7 +59,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
   const [imoLocation, setImoLocation] = useState<string>('Regional Office XI');
   const [outsideSender, setOutsideSender] = useState<string>('');
   const [calendarYear, setCalendarYear] = useState<number>(2026);
-  const [timeSpent, setTimeSpent] = useState<string>('4.0');
+  const [timeSpent] = useState<string>('8.0');
   const [status, setStatus] = useState<ActivityStatus>('COMPLETED');
   const [commitmentId, setCommitmentId] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
@@ -175,18 +174,13 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
                 className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800"
               />
               {dtrInfo && (
-                <button
-                  type="button"
-                  onClick={() => setTimeSpent(String(dtrInfo.totalHours))}
-                  className="mt-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-lg flex items-center justify-between w-full transition-colors"
-                  title="Click to apply official DTR hours"
-                >
+                <div className="mt-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg flex items-center justify-between w-full">
                   <span className="flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>DTR: {dtrInfo.timeIn} - {dtrInfo.timeOut}</span>
                   </span>
-                  <span className="underline font-bold text-emerald-900">Set {dtrInfo.totalHours} hrs</span>
-                </button>
+                  <span className="text-emerald-900 font-bold font-mono">{dtrInfo.primaryMachine}</span>
+                </div>
               )}
             </div>
 
@@ -361,50 +355,37 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
             />
           </div>
 
-          {/* Row 6: Hours, Status & CY */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Row 6: Status & CY */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                Hours Spent *
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0.5"
-                max="24"
-                required
-                value={timeSpent}
-                onChange={(e) => setTimeSpent(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2 bg-white shadow-xs font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
-                Status *
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-nia-600" />
+                  Task Status *
+                </span>
+                <span className="text-[10px] text-emerald-700 font-semibold">Only COMPLETED counts in IPCR</span>
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ActivityStatus)}
-                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2 bg-white shadow-xs font-semibold"
+                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800"
               >
-                <option value="COMPLETED">COMPLETED</option>
-                <option value="ONGOING">ONGOING</option>
-                <option value="DRAFT">DRAFT</option>
+                <option value="COMPLETED">COMPLETED (Credited to IPCR actual outputs)</option>
+                <option value="ONGOING">ONGOING (Work-in-progress, not counted yet)</option>
+                <option value="DRAFT">DRAFT (Preliminary note)</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Calendar Year (CY)
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span>Calendar Year (CY) *</span>
+                <span className="text-[10px] text-slate-400">Current Work Year</span>
               </label>
               <input
                 type="number"
                 value={calendarYear}
                 onChange={(e) => setCalendarYear(parseInt(e.target.value) || 2026)}
-                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2 bg-white shadow-xs font-mono"
+                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-mono font-semibold"
               />
             </div>
           </div>

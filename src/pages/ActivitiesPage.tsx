@@ -919,35 +919,20 @@ export const ActivitiesPage: React.FC = () => {
 
                 {/* Status */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Status *
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Status *</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">Only Completed counts in IPCR</span>
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as ActivityStatus)}
-                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm"
+                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm font-semibold text-slate-800"
                   >
-                    <option value="COMPLETED">Completed</option>
-                    <option value="ONGOING">Ongoing</option>
+                    <option value="COMPLETED">Completed (Counts in IPCR)</option>
+                    <option value="ONGOING">Ongoing (Work-in-progress)</option>
                     <option value="DRAFT">Draft</option>
                     <option value="CANCELLED">Cancelled</option>
                   </select>
-                </div>
-
-                {/* Hours Spent */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" /> Hours Spent
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="16"
-                    value={timeSpent}
-                    onChange={(e) => setTimeSpent(e.target.value)}
-                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm"
-                  />
                 </div>
 
                 {/* IPCR Commitment Selection */}
