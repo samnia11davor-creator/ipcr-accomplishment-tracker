@@ -42,6 +42,7 @@ import {
 import { AttachmentDropzone } from '@/components/common/AttachmentDropzone';
 import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
 import { StorageMonitorPill } from '@/components/common/StorageMonitorPill';
+import { CommitmentSelect } from '@/components/common/CommitmentSelect';
 import { saveAttachment, deleteAttachment } from '@/lib/attachmentStore';
 import { formatBytes } from '@/lib/storageMonitor';
 import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
@@ -950,22 +951,15 @@ export const ActivitiesPage: React.FC = () => {
                 </div>
 
                 {/* IPCR Commitment Selection */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Assigned IPCR Goal
-                  </label>
-                  <select
+                <div className="col-span-1">
+                  <CommitmentSelect
+                    label="Assigned IPCR Goal"
                     value={commitmentId}
-                    onChange={(e) => setCommitmentId(e.target.value)}
-                    className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-sm font-semibold"
-                  >
-                    <option value="">Auto-classify with AI</option>
-                    {commitments.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.tier === 'STRATEGIC' ? 'I' : c.tier === 'CORE' ? 'II' : 'III'}. {c.commitmentCode} — {c.mfoPap.slice(0, 35)}...
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(id) => setCommitmentId(id)}
+                    commitments={commitments}
+                    allowAutoClassify={true}
+                    placeholder="Select goal or auto-classify with AI..."
+                  />
                 </div>
 
                 {/* If Custom Doc Type chosen, show input */}

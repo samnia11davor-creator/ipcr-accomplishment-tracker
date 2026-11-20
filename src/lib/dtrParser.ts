@@ -189,3 +189,4 @@ export function getDtrForDate(dateStr: string): DailyDtrSummary | undefined {
   const all = getSavedDtrSummaries();
   return all.find((s) => s.date === dateStr);
 }
+

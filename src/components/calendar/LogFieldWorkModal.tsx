@@ -124,9 +124,9 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-8 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
               <Compass className="w-5 h-5 text-emerald-200" />
@@ -152,7 +152,7 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
         </div>
 
         {/* Informational Banner */}
-        <div className="bg-emerald-50 px-6 py-2.5 border-b border-emerald-100 flex items-center gap-2 text-xs text-emerald-900">
+        <div className="bg-emerald-50 px-6 py-2.5 border-b border-emerald-100 flex items-center gap-2 text-xs text-emerald-900 shrink-0">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>
             <strong>SM7 POW Rule:</strong> Field investigations and site validations feed directly into the accomplishment of <strong>SM7. Submit Program of Work (FSDE)</strong>.
@@ -160,7 +160,7 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+        <form id="field-work-form" onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Row 1: Date & Field Work Count */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -412,9 +412,15 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
               maxFiles={6}
             />
           </div>
+        </form>
 
-          {/* Submit Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+        {/* Sticky Action Footer (Always pinned in frame) */}
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <div className="text-xs text-emerald-800 font-semibold flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Supplying SM7 Submit Program of Works</span>
+          </div>
+          <div className="flex items-center gap-2.5">
             <Button variant="secondary" size="md" type="button" onClick={onClose}>
               Cancel
             </Button>
@@ -422,13 +428,14 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
               variant="primary"
               size="md"
               type="submit"
+              form="field-work-form"
               disabled={isSubmitting}
               className="bg-emerald-700 hover:bg-emerald-800 text-white"
             >
               {isSubmitting ? 'Saving Field Work...' : 'Save Field Work (Supply SM7)'}
             </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

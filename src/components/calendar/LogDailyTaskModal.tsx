@@ -6,7 +6,6 @@ import {
   FolderGit2,
   Layers,
   Clock,
-  Target,
   FileText,
   CheckCircle2,
   Paperclip,
@@ -15,6 +14,7 @@ import {
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { AttachmentDropzone } from '@/components/common/AttachmentDropzone';
+import { CommitmentSelect } from '@/components/common/CommitmentSelect';
 import { useApp } from '@/contexts/AppContext';
 import { getDtrForDate } from '@/lib/dtrParser';
 import {
@@ -159,7 +159,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form id="daily-task-form" onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Row 1: Date & Office Origin */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -246,7 +246,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
                     setSelectedProject(e.target.value);
                   }
                 }}
-                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800"
+                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800 truncate"
               >
                 <optgroup label="Official Sheet2 Irrigation Projects">
                   {SHEET2_PROJECTS.map((proj) => (
@@ -292,7 +292,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
                     setSelectedCategory(e.target.value);
                   }
                 }}
-                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800"
+                className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-semibold text-slate-800 truncate"
               >
                 <optgroup label="Official Sheet2 Document Types">
                   {SHEET2_DOC_TYPES.map((dt) => (
@@ -322,31 +322,14 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
           </div>
 
           {/* Row 3: Target IPCR Goal (Commitment) */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Target className="w-3.5 h-3.5 text-nia-600" />
-                Supplied IPCR Commitment (Goal) *
-              </span>
-              <span className="text-[10px] text-slate-500">Auto-links to IPCR rating</span>
-            </label>
-            <select
-              value={commitmentId}
-              onChange={(e) => setCommitmentId(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-300 focus:border-nia-500 focus:ring-2 focus:ring-nia-500/20 px-3.5 py-2.5 bg-white shadow-xs font-bold text-slate-800"
-            >
-              {commitments.map((com) => (
-                <option key={com.id} value={com.id}>
-                  [{com.commitmentCode}] {com.mfoPap} (Target: {com.target})
-                </option>
-              ))}
-            </select>
-            {selectedCommitment && (
-              <div className="mt-1 text-[11px] text-slate-500 italic truncate">
-                Indicator: {selectedCommitment.successIndicator}
-              </div>
-            )}
-          </div>
+          <CommitmentSelect
+            label="Supplied IPCR Commitment (Goal)"
+            required
+            value={commitmentId}
+            onChange={(id) => setCommitmentId(id)}
+            commitments={commitments}
+            placeholder="Select target IPCR commitment / goal..."
+          />
 
           {/* Row 4: Description */}
           <div>
@@ -455,9 +438,20 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
               maxFiles={6}
             />
           </div>
+        </form>
 
-          {/* Submit Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 shrink-0">
+        {/* Sticky Action Footer (Always pinned in frame) */}
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <div className="text-xs text-slate-500 truncate max-w-[280px]">
+            {selectedCommitment ? (
+              <span className="font-semibold text-slate-700">
+                Supplying [{selectedCommitment.commitmentCode}]
+              </span>
+            ) : (
+              'Select an IPCR goal'
+            )}
+          </div>
+          <div className="flex items-center gap-2.5">
             <Button variant="secondary" size="md" type="button" onClick={onClose}>
               Cancel
             </Button>
@@ -465,12 +459,13 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
               variant="primary"
               size="md"
               type="submit"
+              form="daily-task-form"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving Task...' : 'Save Task to Calendar'}
             </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
