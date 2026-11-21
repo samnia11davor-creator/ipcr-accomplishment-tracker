@@ -185,17 +185,21 @@ export interface DailyActivity extends BaseEntity {
   supportingDocumentCount?: number;
   attachments?: TaskAttachment[];  // Photos, PDFs, Word, Excel files
 
-  // Field Work specific properties (SM7 Submit Program of Works)
-  isFieldWork?: boolean;           // True if conducted on-site / in the field (SM7 POW)
-  fieldWorkCount?: number;         // Count of field works/site visits (default 1)
-  fieldWorkType?: string;          // e.g. "Site Inspection", "Field Validation for POW", "Survey Check"
-  siteLocation?: string;           // Specific barangay / river / dam site / stationing
-  jointWith?: string;              // e.g. "Provincial Agri, IMO Engineers, IA officers"
+  // Field Work, Seminar, Workshop & Travel specific properties (SM7 POW, CF2M9 Coordination & Seminars)
+  travelType?: 'field_work' | 'seminar' | 'workshop' | 'meeting' | 'other_travel';
+  eventTitle?: string;             // Title of Seminar, Workshop, or Coordination Meeting
+  organizer?: string;              // Organizer / Sponsoring Agency (e.g. PICE, NIA CO, DA, PRC)
+  venueLocation?: string;          // Hotel, Training Center, or Virtual Platform (Zoom)
+  isFieldWork?: boolean;           // True if conducted on-site / in the field or external travel (SM7 POW, CF2M9)
+  fieldWorkCount?: number;         // Count of field works/site visits or attended sessions (default 1)
+  fieldWorkType?: string;          // e.g. "Site Inspection", "Seminar / Training", "Planning Convergence Workshop"
+  siteLocation?: string;           // Specific barangay / river / dam site / stationing or venue location
+  jointWith?: string;              // e.g. "Provincial Agri, IMO Engineers, IA officers", "Resource Speakers"
   startDate?: string;              // YYYY-MM-DD for multi-day trips
   endDate?: string;                // YYYY-MM-DD for multi-day trips
   durationDays?: number;           // Total days in multi-day trip
   tripDayIndex?: number;           // 1-based index (e.g. Day 1, Day 2)
-  tripGroupId?: string;            // UUID linking all days of the same field mission
+  tripGroupId?: string;            // UUID linking all days of the same field mission or multi-day workshop
 }
 
 // ---------------------------------------------------------------------------

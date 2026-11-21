@@ -37,16 +37,21 @@ export const ReportsPage: React.FC = () => {
       );
 
       if (related.length > 0) {
-        const docActs = related.filter((a) => !a.isFieldWork);
-        const fieldActs = related.filter((a) => a.isFieldWork);
-        const fieldUnits = fieldActs.reduce((acc, a) => acc + (a.fieldWorkCount || 1), 0);
+        if (com.commitmentCode === 'CF2M9') {
+          const eventsList = related.map((a) => `• ${a.output}`).join('\n');
+          synthesized[com.id] = `Successfully attended and participated in ${related.length} required meeting(s), technical seminar(s), and planning convergence workshop(s) as directed by supervisor:\n${eventsList}`;
+        } else {
+          const docActs = related.filter((a) => !a.isFieldWork);
+          const fieldActs = related.filter((a) => a.isFieldWork);
+          const fieldUnits = fieldActs.reduce((acc, a) => acc + (a.fieldWorkCount || 1), 0);
 
-        let narrative = `Successfully prepared and accomplished ${docActs.length} document deliverable(s) under ${com.mfoPap}, specifically: ${docActs.map((a) => a.output).join('; ')}.`;
-        if (fieldUnits > 0) {
-          narrative += ` Additionally conducted ${fieldUnits} on-site field validation/investigation(s) (${fieldActs.map((a) => a.output).join('; ')}) supplying POW readiness.`;
+          let narrative = `Successfully prepared and accomplished ${docActs.length} document deliverable(s) under ${com.mfoPap}, specifically: ${docActs.map((a) => a.output).join('; ')}.`;
+          if (fieldUnits > 0) {
+            narrative += ` Additionally conducted ${fieldUnits} on-site field validation/investigation(s) (${fieldActs.map((a) => a.output).join('; ')}) supplying POW readiness.`;
+          }
+          narrative += ` All submissions strictly verified against approved IPCR targets.`;
+          synthesized[com.id] = narrative;
         }
-        narrative += ` All submissions strictly verified against approved IPCR targets.`;
-        synthesized[com.id] = narrative;
       } else {
         synthesized[com.id] = com.actualAccomplishmentDraft || 'No accomplishments recorded for this period.';
       }

@@ -296,7 +296,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
               + Log Work / Document Task
             </Button>
 
-            {/* Direct Field Work Logger */}
+            {/* Direct Travel / Field Work / Seminar Logger */}
             <Button
               variant="outline"
               size="sm"
@@ -304,7 +304,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
               leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
               className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold shadow-xs"
             >
-              + Log Field Work (SM7)
+              + Field Work & Seminars
             </Button>
 
             {/* Sync Office DTR / Biometrics */}
@@ -478,7 +478,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
                           handleOpenFieldWork(day.dateStr);
                         }}
                         className="p-1 rounded hover:bg-emerald-100 text-emerald-700 transition-colors"
-                        title="Add Field Work (SM7) on this date"
+                        title="Add Field Work, Seminar, or Workshop on this date"
                       >
                         <Compass className="w-3.5 h-3.5" />
                       </button>
@@ -488,22 +488,58 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
 
                 {/* Cell Body: Task Chips */}
                 <div className="space-y-1 overflow-hidden flex-1">
-                  {/* 1. Field Work Chips (Prominent Emerald) */}
-                  {dayFieldWorks.slice(0, 2).map((fw) => (
-                    <div
-                      key={fw.id}
-                      className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-950 text-[10px] font-medium leading-tight truncate shadow-2xs hover:bg-emerald-100/70"
-                      title={`Field Work: [${fw.project}] ${fw.output}`}
-                    >
-                      <span className="font-bold text-emerald-800">🌾 [{fw.project || 'Field'}] </span>
-                      {fw.durationDays && fw.durationDays > 1 && (
-                        <span className="inline-block px-1 rounded text-[9px] font-bold bg-emerald-200/80 text-emerald-900 mr-1 font-mono">
-                          Day {fw.tripDayIndex || 1}/{fw.durationDays}
+                  {/* 1. Travel, Field Work, Seminar & Workshop Chips */}
+                  {dayFieldWorks.slice(0, 2).map((fw) => {
+                    const isSeminar = fw.travelType === 'seminar';
+                    const isWorkshop = fw.travelType === 'workshop';
+                    const isMeeting = fw.travelType === 'meeting';
+
+                    const chipBg = isSeminar
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-950 hover:bg-indigo-100/70'
+                      : isWorkshop
+                      ? 'bg-violet-50 border-violet-200 text-violet-950 hover:bg-violet-100/70'
+                      : isMeeting
+                      ? 'bg-teal-50 border-teal-200 text-teal-950 hover:bg-teal-100/70'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-950 hover:bg-emerald-100/70';
+
+                    const chipEmoji = isSeminar
+                      ? '🎓'
+                      : isWorkshop
+                      ? '🤝'
+                      : isMeeting
+                      ? '🏛️'
+                      : '🌾';
+
+                    const chipLabel = isSeminar
+                      ? fw.project || 'Seminar'
+                      : isWorkshop
+                      ? fw.project || 'Workshop'
+                      : isMeeting
+                      ? fw.project || 'Meeting'
+                      : fw.project || 'Field';
+
+                    const chipText = isSeminar || isWorkshop || isMeeting
+                      ? fw.eventTitle || fw.output
+                      : fw.fieldWorkType || fw.output;
+
+                    return (
+                      <div
+                        key={fw.id}
+                        className={`px-1.5 py-0.5 rounded border text-[10px] font-medium leading-tight truncate shadow-2xs ${chipBg}`}
+                        title={`${fw.travelType ? fw.travelType.toUpperCase() : 'FIELD WORK'}: [${chipLabel}] ${chipText}`}
+                      >
+                        <span className="font-bold">
+                          {chipEmoji} [{chipLabel}]{' '}
                         </span>
-                      )}
-                      <span>{fw.fieldWorkType || fw.output}</span>
-                    </div>
-                  ))}
+                        {fw.durationDays && fw.durationDays > 1 && (
+                          <span className="inline-block px-1 rounded text-[9px] font-bold bg-black/10 mr-1 font-mono">
+                            Day {fw.tripDayIndex || 1}/{fw.durationDays}
+                          </span>
+                        )}
+                        <span>{chipText}</span>
+                      </div>
+                    );
+                  })}
 
                   {/* 2. Document Task Chips (Clean Slate/Blue) */}
                   {dayDocTasks.slice(0, dayFieldWorks.length > 0 ? 1 : 2).map((doc) => (

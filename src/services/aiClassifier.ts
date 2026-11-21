@@ -36,6 +36,7 @@ const CLASSIFICATION_RULES: KeywordRule[] = [
     commitmentCode: 'CF2M9',
     keywords: [
       'meeting', 'coordination', 'caraga river', 'wefe', 'rise', 'seminar', 'workshop',
+      'training', 'pice', 'convention', 'conference', 'convergence', 'cpd', 'capacity building',
       'data gathering', 'central office', 'imo coordination', 'stakeholder', 'inter-agency'
     ],
     rationalePattern: 'Activity supplies Core Function CF2M9 (Partnership, Convergence Activities, Coordination Meetings & Seminars).',

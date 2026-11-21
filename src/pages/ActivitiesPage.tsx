@@ -619,7 +619,7 @@ export const ActivitiesPage: React.FC = () => {
             </button>
           </div>
 
-          {/* 3. Field Work Button (Supplies SM7) */}
+          {/* 3. Field Work / Seminar Button */}
           <Button
             variant="outline"
             size="sm"
@@ -627,7 +627,7 @@ export const ActivitiesPage: React.FC = () => {
             leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
             className="border-emerald-300 text-emerald-900 bg-emerald-50/50 hover:bg-emerald-100/70 font-semibold"
           >
-            + Field Work (SM7)
+            + Field Work & Seminars
           </Button>
 
           {/* 4. Sync Office DTR */}
@@ -1418,9 +1418,24 @@ export const ActivitiesPage: React.FC = () => {
                               )}
 
                               {act.isFieldWork && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                  <Compass className="w-2.5 h-2.5 text-emerald-700" />
-                                  Field Work (SM7 POW)
+                                <span
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                    act.travelType === 'seminar'
+                                      ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                                      : act.travelType === 'workshop'
+                                      ? 'bg-violet-100 text-violet-800 border border-violet-300'
+                                      : act.travelType === 'meeting'
+                                      ? 'bg-teal-100 text-teal-800 border border-teal-300'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  }`}
+                                >
+                                  {act.travelType === 'seminar'
+                                    ? '🎓 Seminar (CF2M9)'
+                                    : act.travelType === 'workshop'
+                                    ? '🤝 Workshop (CF2M9)'
+                                    : act.travelType === 'meeting'
+                                    ? '🏛️ Meeting (CF2M9)'
+                                    : '🌾 Field Work (SM7 POW)'}
                                 </span>
                               )}
                             </div>
