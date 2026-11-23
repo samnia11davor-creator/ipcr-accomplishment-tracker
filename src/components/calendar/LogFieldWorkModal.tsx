@@ -27,6 +27,7 @@ import {
   SHEET2_OFFICE_SOURCES,
 } from '@/data/sheet2MasterData';
 import { TaskAttachment } from '@/types';
+import { getCurrentManilaDateString } from '@/lib/dates';
 
 export type TravelActivityType = 'field_work' | 'seminar' | 'workshop' | 'meeting';
 
@@ -100,22 +101,34 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
     [commitments]
   );
 
+  // Helper to calculate safe end date (+2 days)
+  const getInitialEndDate = (baseDate?: string) => {
+    const base = baseDate || getCurrentManilaDateString();
+    const parts = base.split('-').map(Number);
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2] + 2);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dt = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dt}`;
+    }
+    return base;
+  };
+
   // Activity / Mission Type
   const [travelType, setTravelType] = useState<TravelActivityType>(initialType);
 
   // Duration Mode: Single Day vs Multi-Day Event/Trip
   const [durationMode, setDurationMode] = useState<'single' | 'multi'>('single');
   const [date, setDate] = useState<string>(
-    initialDate || new Date().toISOString().split('T')[0]
+    initialDate || getCurrentManilaDateString()
   );
   const [startDate, setStartDate] = useState<string>(
-    initialDate || new Date().toISOString().split('T')[0]
+    initialDate || getCurrentManilaDateString()
   );
-  const [endDate, setEndDate] = useState<string>(() => {
-    const d = new Date(initialDate || new Date());
-    d.setDate(d.getDate() + 2); // Default to a 3-day travel / seminar span
-    return d.toISOString().split('T')[0];
-  });
+  const [endDate, setEndDate] = useState<string>(() =>
+    getInitialEndDate(initialDate)
+  );
   const [multiDayCountRule, setMultiDayCountRule] = useState<'consolidated' | 'per_day'>('consolidated');
   const [excludeWeekends, setExcludeWeekends] = useState(false);
 
@@ -178,33 +191,43 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
         if (cf2m9) setTargetCommitmentId(cf2m9.id);
       }
 
-      if (initialDate) {
-        setDate(initialDate);
-        setStartDate(initialDate);
-        const d = new Date(initialDate);
-        d.setDate(d.getDate() + 2);
-        setEndDate(d.toISOString().split('T')[0]);
-      }
+      const activeDate = initialDate || getCurrentManilaDateString();
+      setDate(activeDate);
+      setStartDate(activeDate);
+      setEndDate(getInitialEndDate(activeDate));
       setIsSubmitting(false);
     }
-  }, [isOpen, initialType, initialDate, sm7pow, cf2m9]);
+  }, [isOpen, initialType, initialDate, sm7pow?.id, cf2m9?.id]);
 
-  // Compute list of dates for multi-day field work / seminars
+  // Compute list of dates for multi-day field work / seminars (Bounded & Freeze-Proof)
   const calculatedDates = useMemo(() => {
     if (durationMode === 'single') {
       return [date];
     }
     if (!startDate || !endDate) return [startDate || date];
-    const s = new Date(startDate + 'T00:00:00');
-    const e = new Date(endDate + 'T00:00:00');
+
+    const sParts = startDate.split('-').map(Number);
+    const eParts = endDate.split('-').map(Number);
+    if (sParts.length !== 3 || eParts.length !== 3) return [startDate];
+
+    const s = new Date(sParts[0], sParts[1] - 1, sParts[2]);
+    const e = new Date(eParts[0], eParts[1] - 1, eParts[2]);
+
     if (isNaN(s.getTime()) || isNaN(e.getTime()) || s > e) return [startDate];
 
     const result: string[] = [];
     const cur = new Date(s);
-    while (cur <= e) {
+    let guard = 0;
+    const MAX_DAYS = 60; // Hard loop cap to guarantee the thread never hangs
+
+    while (cur <= e && guard < MAX_DAYS) {
+      guard++;
       const dayOfWeek = cur.getDay(); // 0 = Sun, 6 = Sat
       if (!excludeWeekends || (dayOfWeek !== 0 && dayOfWeek !== 6)) {
-        result.push(cur.toISOString().split('T')[0]);
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        result.push(`${y}-${m}-${d}`);
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -414,7 +437,7 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Dynamic Header based on Travel/Mission Type */}
         <div

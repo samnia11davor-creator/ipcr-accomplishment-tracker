@@ -21,13 +21,14 @@ import {
   SHEET2_DOC_TYPES,
   SHEET2_OFFICE_SOURCES,
 } from '@/data/sheet2MasterData';
-import { ActivityStatus, TaskAttachment } from '@/types';
+import { ActivityStatus, DailyActivity, TaskAttachment } from '@/types';
 import { getCurrentManilaDateString } from '@/lib/dates';
 
 interface LogDailyTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialDate?: string;
+  activityToEdit?: DailyActivity | null;
   onSuccess?: () => void;
 }
 
@@ -35,9 +36,10 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
   isOpen,
   onClose,
   initialDate,
+  activityToEdit,
   onSuccess,
 }) => {
-  const { addActivity, commitments } = useApp();
+  const { addActivity, updateActivity, commitments } = useApp();
 
   const [activityDate, setActivityDate] = useState<string>(
     initialDate || getCurrentManilaDateString()
@@ -68,19 +70,47 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
 
   const dtrInfo = getDtrForDate(activityDate);
 
-  // Update date if initialDate changes
+  // Sync state whenever modal opens or activityToEdit/initialDate changes
   useEffect(() => {
-    if (initialDate) {
-      setActivityDate(initialDate);
+    if (isOpen) {
+      if (activityToEdit) {
+        setActivityDate(activityToEdit.activityDate || getCurrentManilaDateString());
+        setDescription(activityToEdit.description || '');
+        setOutput(activityToEdit.output || '');
+        setSelectedProject(activityToEdit.project || 'Suawan SRIP');
+        setIsCustomProject(false);
+        setCustomProjectInput('');
+        setSelectedCategory(activityToEdit.category || 'Detailed Engineering');
+        setIsCustomDocType(false);
+        setCustomDocTypeInput('');
+        setImoLocation(activityToEdit.imoLocation || 'Regional Office XI');
+        setOutsideSender('');
+        setCalendarYear(activityToEdit.calendarYear || 2026);
+        setStatus(activityToEdit.status || 'COMPLETED');
+        setCommitmentId(activityToEdit.commitmentId || '');
+        setRemarks(activityToEdit.remarks || '');
+        setAttachments(activityToEdit.attachments || []);
+      } else {
+        setActivityDate(initialDate || getCurrentManilaDateString());
+        setDescription('');
+        setOutput('');
+        setSelectedProject('Suawan SRIP');
+        setIsCustomProject(false);
+        setCustomProjectInput('');
+        setSelectedCategory('Detailed Engineering');
+        setIsCustomDocType(false);
+        setCustomDocTypeInput('');
+        setImoLocation('Regional Office XI');
+        setOutsideSender('');
+        setCalendarYear(2026);
+        setStatus('COMPLETED');
+        setCommitmentId(commitments[0]?.id || '');
+        setRemarks('');
+        setAttachments([]);
+      }
+      setIsSubmitting(false);
     }
-  }, [initialDate]);
-
-  // Set default commitment if available
-  useEffect(() => {
-    if (commitments.length > 0 && !commitmentId) {
-      setCommitmentId(commitments[0].id);
-    }
-  }, [commitments, commitmentId]);
+  }, [isOpen, activityToEdit, initialDate, commitments]);
 
   if (!isOpen) return null;
 
@@ -103,23 +133,43 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
         ? `Others (${outsideSender.trim()})`
         : imoLocation;
 
-    addActivity({
-      activityDate,
-      description: description.trim(),
-      output: output.trim(),
-      category: resolvedCategory,
-      project: resolvedProject,
-      imoLocation: resolvedLocation,
-      calendarYear: Number(calendarYear) || 2026,
-      timeSpentHours: parseFloat(timeSpent) || 4.0,
-      status,
-      commitmentId: commitmentId || undefined,
-      classificationStatus: commitmentId ? 'CONFIRMED' : 'PENDING',
-      remarks: remarks.trim() || undefined,
-      attachments,
-      supportingDocumentCount: attachments.length,
-      isFieldWork: false,
-    });
+    if (activityToEdit) {
+      updateActivity({
+        ...activityToEdit,
+        activityDate,
+        description: description.trim(),
+        output: output.trim(),
+        category: resolvedCategory,
+        project: resolvedProject,
+        imoLocation: resolvedLocation,
+        calendarYear: Number(calendarYear) || 2026,
+        timeSpentHours: parseFloat(timeSpent) || 4.0,
+        status,
+        commitmentId: commitmentId || undefined,
+        classificationStatus: commitmentId ? 'CONFIRMED' : 'PENDING',
+        remarks: remarks.trim() || undefined,
+        attachments,
+        supportingDocumentCount: attachments.length,
+      });
+    } else {
+      addActivity({
+        activityDate,
+        description: description.trim(),
+        output: output.trim(),
+        category: resolvedCategory,
+        project: resolvedProject,
+        imoLocation: resolvedLocation,
+        calendarYear: Number(calendarYear) || 2026,
+        timeSpentHours: parseFloat(timeSpent) || 4.0,
+        status,
+        commitmentId: commitmentId || undefined,
+        classificationStatus: commitmentId ? 'CONFIRMED' : 'PENDING',
+        remarks: remarks.trim() || undefined,
+        attachments,
+        supportingDocumentCount: attachments.length,
+        isFieldWork: false,
+      });
+    }
 
     setIsSubmitting(false);
     if (onSuccess) onSuccess();
@@ -129,7 +179,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
   const selectedCommitment = commitments.find((c) => c.id === commitmentId);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-nia-900 via-nia-800 to-slate-900 text-white flex items-center justify-between shrink-0">
@@ -139,13 +189,15 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold flex items-center gap-2">
-                Log Work / Document Task
+                {activityToEdit ? 'Edit Daily Engineering Entry' : 'Log Work / Document Task'}
                 <Badge variant="blue" size="sm" className="bg-white/20 text-white border-white/30">
-                  Calendar Entry
+                  {activityToEdit ? 'Update Record' : 'Official Entry'}
                 </Badge>
               </h2>
               <p className="text-xs text-slate-300">
-                Record quantifiable engineering outputs, review memorandums, or drawings on the calendar
+                {activityToEdit
+                  ? 'Update quantifiable engineering outputs, origin, or IPCR alignment'
+                  : 'Record quantifiable engineering outputs, review memorandums, or drawings'}
               </p>
             </div>
           </div>
@@ -157,8 +209,9 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
           </button>
         </div>
 
-        {/* Form Body */}
-        <form id="daily-task-form" onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        {/* Form Enclosing Body and Sticky Footer */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Row 1: Date & Office Origin */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -419,7 +472,7 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
               maxFiles={6}
             />
           </div>
-        </form>
+        </div>
 
         {/* Sticky Action Footer (Always pinned in frame) */}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
@@ -440,14 +493,18 @@ export const LogDailyTaskModal: React.FC<LogDailyTaskModalProps> = ({
               variant="primary"
               size="md"
               type="submit"
-              form="daily-task-form"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving Task...' : 'Save Task to Calendar'}
+              {isSubmitting
+                ? 'Saving Task...'
+                : activityToEdit
+                ? 'Update Task Entry'
+                : 'Save Task to Calendar'}
             </Button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
-  );
+  </div>
+);
 };

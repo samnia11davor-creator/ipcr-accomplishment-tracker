@@ -47,6 +47,7 @@ import { CommitmentSelect } from '@/components/common/CommitmentSelect';
 import { saveAttachment, deleteAttachment } from '@/lib/attachmentStore';
 import { formatBytes } from '@/lib/storageMonitor';
 import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
+import { LogDailyTaskModal } from '@/components/calendar/LogDailyTaskModal';
 import { LogFieldWorkModal, TravelActivityType } from '@/components/calendar/LogFieldWorkModal';
 import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
 
@@ -100,6 +101,8 @@ export const ActivitiesPage: React.FC = () => {
     }
   };
 
+  const [isDailyTaskModalOpen, setIsDailyTaskModalOpen] = useState(false);
+  const [activityToEdit, setActivityToEdit] = useState<DailyActivity | null>(null);
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
   const [fieldWorkModalType, setFieldWorkModalType] = useState<TravelActivityType>('field_work');
   const [isDtrModalOpen, setIsDtrModalOpen] = useState(false);
@@ -238,8 +241,8 @@ export const ActivitiesPage: React.FC = () => {
     setCommitmentId(act.commitmentId || '');
     setRemarks(act.remarks || '');
     setAttachments(act.attachments || []);
-    setIsFormOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setActivityToEdit(act);
+    setIsDailyTaskModalOpen(true);
   };
 
   const handleDuplicate = (act: DailyActivity) => {
@@ -594,22 +597,18 @@ export const ActivitiesPage: React.FC = () => {
             Sync DTR
           </Button>
 
-          {/* Primary Action Button */}
+          {/* Primary Action Button: Dedicated Modal Dialog */}
           <Button
             variant="primary"
             size="sm"
             onClick={() => {
-              if (isFormOpen && !editingActivityId) {
-                setIsFormOpen(false);
-              } else {
-                resetForm();
-                setIsFormOpen(true);
-              }
+              setActivityToEdit(null);
+              setIsDailyTaskModalOpen(true);
             }}
-            leftIcon={isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            leftIcon={<Plus className="w-4 h-4" />}
             className="bg-nia-700 hover:bg-nia-800 text-white font-semibold shadow-xs"
           >
-            {isFormOpen ? 'Close Form' : '+ Log Daily Work'}
+            + Log Daily Work
           </Button>
         </div>
       </div>
@@ -1815,13 +1814,7 @@ export const ActivitiesPage: React.FC = () => {
         </Card>
       ) : viewMode === 'calendar' ? (
         /* Google Sheets-Style Monthly Calendar View */
-        <GoogleSheetCalendarView
-          onOpenDailyActivityModal={(d) => {
-            resetForm();
-            if (d) setActivityDate(d);
-            setIsFormOpen(true);
-          }}
-        />
+        <GoogleSheetCalendarView />
       ) : (
         /* Timeline / Date Groups View */
         <div className="space-y-4">
@@ -1890,6 +1883,16 @@ export const ActivitiesPage: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* Daily Work Task Modal */}
+      <LogDailyTaskModal
+        isOpen={isDailyTaskModalOpen}
+        onClose={() => {
+          setIsDailyTaskModalOpen(false);
+          setActivityToEdit(null);
+        }}
+        activityToEdit={activityToEdit}
+      />
 
       {/* Field Work & Seminar Modal */}
       <LogFieldWorkModal

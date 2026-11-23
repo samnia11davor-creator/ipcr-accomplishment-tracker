@@ -22,7 +22,6 @@ import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
 import { getSavedDtrSummaries, DailyDtrSummary } from '@/lib/dtrParser';
 
 interface GoogleSheetCalendarViewProps {
-  onOpenDailyActivityModal?: (date?: string) => void;
   className?: string;
 }
 
@@ -52,7 +51,6 @@ const WEEKDAY_NAMES = [
 ];
 
 export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = ({
-  onOpenDailyActivityModal,
   className = '',
 }) => {
   const { activities, commitments } = useApp();
@@ -228,9 +226,6 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
         `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${defaultDay}`
     );
     setIsDailyTaskModalOpen(true);
-    if (onOpenDailyActivityModal) {
-      onOpenDailyActivityModal(date);
-    }
   };
 
   const handleOpenFieldWork = (date?: string, type: TravelActivityType = 'field_work') => {
