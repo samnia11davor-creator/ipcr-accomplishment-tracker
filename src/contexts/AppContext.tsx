@@ -89,25 +89,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>('SEM2');
 
-  // Persistence effects
+  // Persistence effects with safety guards against QuotaExceededError or storage restrictions
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_profile`, JSON.stringify(userProfile));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_profile`, JSON.stringify(userProfile));
+    } catch (e) {
+      console.warn('Failed to persist profile to localStorage:', e);
+    }
   }, [userProfile]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_commitments`, JSON.stringify(commitments));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_commitments`, JSON.stringify(commitments));
+    } catch (e) {
+      console.warn('Failed to persist commitments to localStorage:', e);
+    }
   }, [commitments]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
+    } catch (e) {
+      console.warn('Failed to persist activities to localStorage:', e);
+    }
   }, [activities]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_documents`, JSON.stringify(documents));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_documents`, JSON.stringify(documents));
+    } catch (e) {
+      console.warn('Failed to persist documents to localStorage:', e);
+    }
   }, [documents]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_audit`, JSON.stringify(auditLogs));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_audit`, JSON.stringify(auditLogs));
+    } catch (e) {
+      console.warn('Failed to persist audit logs to localStorage:', e);
+    }
   }, [auditLogs]);
 
   // Helper to log audit entries

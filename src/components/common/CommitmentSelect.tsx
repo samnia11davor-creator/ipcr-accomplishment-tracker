@@ -91,9 +91,9 @@ export const CommitmentSelect: React.FC<CommitmentSelectProps> = ({
 
     return commitments.filter(
       (c) =>
-        c.commitmentCode.toLowerCase().includes(q) ||
-        c.mfoPap.toLowerCase().includes(q) ||
-        c.target.toLowerCase().includes(q) ||
+        (c.commitmentCode || '').toLowerCase().includes(q) ||
+        (c.mfoPap || '').toLowerCase().includes(q) ||
+        (c.target || '').toLowerCase().includes(q) ||
         (c.themeCategory && c.themeCategory.toLowerCase().includes(q)) ||
         (c.strategicObjective && c.strategicObjective.toLowerCase().includes(q))
     );
@@ -158,11 +158,11 @@ export const CommitmentSelect: React.FC<CommitmentSelectProps> = ({
                   [{selectedCommitment.commitmentCode}]
                 </span>
                 <span className="text-[11px] font-bold text-slate-600 truncate max-w-[280px] sm:max-w-[360px]">
-                  {selectedCommitment.mfoPap.replace(/^STRATEGIC MEASURE \d+\.\s*|^CORE FUNCTION \d+\s*MEASURE \d+\.\s*|^SF\d+\.\s*/i, '')}
+                  {(selectedCommitment.mfoPap || '').replace(/^STRATEGIC MEASURE \d+\.\s*|^CORE FUNCTION \d+\s*MEASURE \d+\.\s*|^SF\d+\.\s*/i, '')}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                Target: {selectedCommitment.target}
+                Target: {selectedCommitment.target || 'N/A'}
               </p>
             </div>
           ) : allowAutoClassify && !value ? (
