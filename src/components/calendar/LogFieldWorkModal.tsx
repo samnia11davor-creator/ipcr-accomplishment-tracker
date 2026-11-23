@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -165,6 +165,30 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
     }
   };
 
+  // Re-synchronize modal state whenever it is opened
+  useEffect(() => {
+    if (isOpen) {
+      const typeToSet = initialType || 'field_work';
+      setTravelType(typeToSet);
+      if (typeToSet === 'field_work') {
+        setHasSpecificProject(true);
+        if (sm7pow) setTargetCommitmentId(sm7pow.id);
+      } else {
+        setHasSpecificProject(false);
+        if (cf2m9) setTargetCommitmentId(cf2m9.id);
+      }
+
+      if (initialDate) {
+        setDate(initialDate);
+        setStartDate(initialDate);
+        const d = new Date(initialDate);
+        d.setDate(d.getDate() + 2);
+        setEndDate(d.toISOString().split('T')[0]);
+      }
+      setIsSubmitting(false);
+    }
+  }, [isOpen, initialType, initialDate, sm7pow, cf2m9]);
+
   // Compute list of dates for multi-day field work / seminars
   const calculatedDates = useMemo(() => {
     if (durationMode === 'single') {
@@ -240,148 +264,153 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
 
-    const tripGroupId = durationMode === 'multi' ? `mission-${Date.now()}` : undefined;
-    const totalDays = calculatedDates.length;
+    try {
+      const tripGroupId = durationMode === 'multi' ? `mission-${Date.now()}` : undefined;
+      const totalDays = calculatedDates.length;
 
-    calculatedDates.forEach((d, index) => {
-      const dayNum = index + 1;
+      calculatedDates.forEach((d, index) => {
+        const dayNum = index + 1;
 
-      // Construct descriptive log text based on category
-      let dayDesc = '';
-      let defaultOutputText = '';
+        // Construct descriptive log text based on category
+        let dayDesc = '';
+        let defaultOutputText = '';
 
-      if (travelType === 'field_work') {
-        dayDesc =
-          durationMode === 'multi'
-            ? `Field Work: ${fieldScope} for ${resolvedProject} (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate})${
-                siteLocation ? ` at ${siteLocation}` : ''
-              }. Joint inspection with ${jointWith || 'assigned engineering team'}.`
-            : `Field Work: ${fieldScope} for ${resolvedProject}${
-                siteLocation ? ` at ${siteLocation}` : ''
-              }. Joint inspection with ${jointWith || 'assigned engineering team'}.`;
+        if (travelType === 'field_work') {
+          dayDesc =
+            durationMode === 'multi'
+              ? `Field Work: ${fieldScope} for ${resolvedProject} (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate})${
+                  siteLocation ? ` at ${siteLocation}` : ''
+                }. Joint inspection with ${jointWith || 'assigned engineering team'}.`
+              : `Field Work: ${fieldScope} for ${resolvedProject}${
+                  siteLocation ? ` at ${siteLocation}` : ''
+                }. Joint inspection with ${jointWith || 'assigned engineering team'}.`;
 
-        defaultOutputText =
-          durationMode === 'multi'
-            ? findingsOutput.trim()
-              ? `${findingsOutput.trim()} [Day ${dayNum} of ${totalDays}]`
-              : `Conducted on-site field investigation and validation for ${resolvedProject} (Day ${dayNum} of ${totalDays}) supplying SM7 Program of Works requirement.`
-            : findingsOutput.trim() ||
-              `Conducted field validation and inspection of ${resolvedProject} (${unitCount} site visit/investigation) supplying SM7 Program of Works requirement.`;
-      } else if (travelType === 'seminar') {
-        const titleText = eventTitle.trim() || seminarScope;
-        dayDesc =
-          durationMode === 'multi'
-            ? `Attended Seminar/Training: "${titleText}" conducted by ${organizer || 'Organizing Body'} at ${
-                venueLocation || 'Designated Venue'
-              } (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate}).`
-            : `Attended Seminar/Training: "${titleText}" conducted by ${organizer || 'Organizing Body'} at ${
-                venueLocation || 'Designated Venue'
-              }.`;
+          defaultOutputText =
+            durationMode === 'multi'
+              ? findingsOutput.trim()
+                ? `${findingsOutput.trim()} [Day ${dayNum} of ${totalDays}]`
+                : `Conducted on-site field investigation and validation for ${resolvedProject} (Day ${dayNum} of ${totalDays}) supplying SM7 Program of Works requirement.`
+              : findingsOutput.trim() ||
+                `Conducted field validation and inspection of ${resolvedProject} (${unitCount} site visit/investigation) supplying SM7 Program of Works requirement.`;
+        } else if (travelType === 'seminar') {
+          const titleText = eventTitle.trim() || seminarScope;
+          dayDesc =
+            durationMode === 'multi'
+              ? `Attended Seminar/Training: "${titleText}" conducted by ${organizer || 'Organizing Body'} at ${
+                  venueLocation || 'Designated Venue'
+                } (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate}).`
+              : `Attended Seminar/Training: "${titleText}" conducted by ${organizer || 'Organizing Body'} at ${
+                  venueLocation || 'Designated Venue'
+                }.`;
 
-        defaultOutputText =
-          findingsOutput.trim() ||
-          `Attended and completed technical seminar/training on "${titleText}" conducted by ${
-            organizer || 'Organizing Body'
-          } (${durationMode === 'multi' ? `${totalDays} days, ` : ''}supplying CF2M9).`;
-      } else if (travelType === 'workshop') {
-        const titleText = eventTitle.trim() || workshopScope;
-        dayDesc =
-          durationMode === 'multi'
-            ? `Participated in Workshop: "${titleText}" hosted by ${organizer || 'EOD Planning & Design'} at ${
-                venueLocation || 'Designated Venue'
-              } (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate}).`
+          defaultOutputText =
+            findingsOutput.trim() ||
+            `Attended and completed technical seminar/training on "${titleText}" conducted by ${
+              organizer || 'Organizing Body'
+            } (${durationMode === 'multi' ? `${totalDays} days, ` : ''}supplying CF2M9).`;
+        } else if (travelType === 'workshop') {
+          const titleText = eventTitle.trim() || workshopScope;
+          dayDesc =
+            durationMode === 'multi'
+              ? `Participated in Workshop: "${titleText}" hosted by ${organizer || 'EOD Planning & Design'} at ${
+                  venueLocation || 'Designated Venue'
+                } (Day ${dayNum} of ${totalDays}, ${startDate} to ${endDate}).`
             : `Participated in Workshop: "${titleText}" hosted by ${organizer || 'EOD Planning & Design'} at ${
                 venueLocation || 'Designated Venue'
               }.`;
 
-        defaultOutputText =
-          findingsOutput.trim() ||
-          `Participated in convergence workshop: "${titleText}" hosted by ${
-            organizer || 'EOD Planning & Design'
-          } at ${venueLocation || 'Venue'} supplying CF2M9 requirements.`;
-      } else {
-        // Coordination Meeting
-        const titleText = eventTitle.trim() || meetingScope;
-        dayDesc =
+          defaultOutputText =
+            findingsOutput.trim() ||
+            `Participated in convergence workshop: "${titleText}" hosted by ${
+              organizer || 'EOD Planning & Design'
+            } at ${venueLocation || 'Venue'} supplying CF2M9 requirements.`;
+        } else {
+          // Coordination Meeting
+          const titleText = eventTitle.trim() || meetingScope;
+          dayDesc =
+            durationMode === 'multi'
+              ? `Attended Coordination Meeting: "${titleText}" with ${jointWith || organizer || 'Stakeholders'} at ${
+                  venueLocation || 'Designated Venue'
+                } (Day ${dayNum} of ${totalDays}).`
+              : `Attended Coordination Meeting: "${titleText}" with ${jointWith || organizer || 'Stakeholders'} at ${
+                  venueLocation || 'Designated Venue'
+                }.`;
+
+          defaultOutputText =
+            findingsOutput.trim() ||
+            `Attended official coordination meeting on "${titleText}" with ${
+              jointWith || organizer || 'stakeholders'
+            } supplying CF2M9 coordination requirements.`;
+        }
+
+        // Unit count logic
+        const unitCountForThisDay =
           durationMode === 'multi'
-            ? `Attended Coordination Meeting: "${titleText}" with ${jointWith || organizer || 'Stakeholders'} at ${
-                venueLocation || 'Designated Venue'
-              } (Day ${dayNum} of ${totalDays}).`
-            : `Attended Coordination Meeting: "${titleText}" with ${jointWith || organizer || 'Stakeholders'} at ${
-                venueLocation || 'Designated Venue'
-              }.`;
+            ? multiDayCountRule === 'consolidated'
+              ? index === 0
+                ? Math.max(1, unitCount)
+                : 0
+              : Math.max(1, unitCount)
+            : Math.max(1, unitCount);
 
-        defaultOutputText =
-          findingsOutput.trim() ||
-          `Attended official coordination meeting on "${titleText}" with ${
-            jointWith || organizer || 'stakeholders'
-          } supplying CF2M9 coordination requirements.`;
-      }
-
-      // Unit count logic
-      const unitCountForThisDay =
-        durationMode === 'multi'
-          ? multiDayCountRule === 'consolidated'
-            ? index === 0
-              ? Math.max(1, unitCount)
-              : 0
-            : Math.max(1, unitCount)
-          : Math.max(1, unitCount);
-
-      const activityCategory =
-        travelType === 'field_work'
-          ? 'Field Inspection'
-          : travelType === 'meeting'
-          ? 'Meetings and Coordination'
-          : 'Meetings and Coordination';
-
-      const customRemarks =
-        remarks.trim() ||
-        (travelType === 'field_work'
-          ? durationMode === 'multi'
-            ? `Field work travel mission (Day ${dayNum}/${totalDays}) counted toward SM7 POW.`
-            : `Field work counted toward SM7 POW accomplishment.`
-          : durationMode === 'multi'
-          ? `${travelType.toUpperCase()} attendance (Day ${dayNum}/${totalDays}) counted toward CF2M9.`
-          : `${travelType.toUpperCase()} attendance counted toward CF2M9.`);
-
-      addActivity({
-        activityDate: d,
-        description: dayDesc,
-        output: defaultOutputText,
-        category: activityCategory,
-        project: resolvedProject,
-        imoLocation,
-        timeSpentHours: parseFloat(timeSpentHours) || 8.0,
-        status: 'COMPLETED',
-        commitmentId: targetCommitmentId,
-        classificationStatus: 'CONFIRMED',
-        remarks: customRemarks,
-        isFieldWork: true,
-        travelType,
-        eventTitle: eventTitle.trim() || undefined,
-        organizer: organizer.trim() || undefined,
-        venueLocation: venueLocation.trim() || undefined,
-        fieldWorkCount: unitCountForThisDay,
-        fieldWorkType: currentSelectedScope,
-        siteLocation:
+        const activityCategory =
           travelType === 'field_work'
-            ? siteLocation.trim() || undefined
-            : venueLocation.trim() || undefined,
-        jointWith: jointWith.trim() || undefined,
-        attachments,
-        supportingDocumentCount: attachments.length,
-        startDate: durationMode === 'multi' ? startDate : undefined,
-        endDate: durationMode === 'multi' ? endDate : undefined,
-        durationDays: durationMode === 'multi' ? totalDays : 1,
-        tripDayIndex: durationMode === 'multi' ? dayNum : 1,
-        tripGroupId,
-      });
-    });
+            ? 'Field Inspection'
+            : travelType === 'meeting'
+            ? 'Meetings and Coordination'
+            : 'Meetings and Coordination';
 
-    setIsSubmitting(false);
-    if (onSuccess) onSuccess();
-    onClose();
+        const customRemarks =
+          remarks.trim() ||
+          (travelType === 'field_work'
+            ? durationMode === 'multi'
+              ? `Field work travel mission (Day ${dayNum}/${totalDays}) counted toward SM7 POW.`
+              : `Field work counted toward SM7 POW accomplishment.`
+            : durationMode === 'multi'
+            ? `${travelType.toUpperCase()} attendance (Day ${dayNum}/${totalDays}) counted toward CF2M9.`
+            : `${travelType.toUpperCase()} attendance counted toward CF2M9.`);
+
+        addActivity({
+          activityDate: d,
+          description: dayDesc,
+          output: defaultOutputText,
+          category: activityCategory,
+          project: resolvedProject,
+          imoLocation,
+          timeSpentHours: parseFloat(timeSpentHours) || 8.0,
+          status: 'COMPLETED',
+          commitmentId: targetCommitmentId,
+          classificationStatus: 'CONFIRMED',
+          remarks: customRemarks,
+          isFieldWork: true,
+          travelType,
+          eventTitle: eventTitle.trim() || undefined,
+          organizer: organizer.trim() || undefined,
+          venueLocation: venueLocation.trim() || undefined,
+          fieldWorkCount: unitCountForThisDay,
+          fieldWorkType: currentSelectedScope,
+          siteLocation:
+            travelType === 'field_work'
+              ? siteLocation.trim() || undefined
+              : venueLocation.trim() || undefined,
+          jointWith: jointWith.trim() || undefined,
+          attachments,
+          supportingDocumentCount: attachments.length,
+          startDate: durationMode === 'multi' ? startDate : undefined,
+          endDate: durationMode === 'multi' ? endDate : undefined,
+          durationDays: durationMode === 'multi' ? totalDays : 1,
+          tripDayIndex: durationMode === 'multi' ? dayNum : 1,
+          tripGroupId,
+        });
+      });
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Error submitting activity:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -568,8 +597,9 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form id="travel-field-form" onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* Row 1: Date Configuration based on Mode */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+            {/* Row 1: Date Configuration based on Mode */}
           {durationMode === 'single' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -768,15 +798,17 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
           {/* Row 4: Event Title / Agenda (For Seminars, Workshops, Meetings) */}
           {travelType !== 'field_work' && (
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <FileCheck2 className="w-3.5 h-3.5 text-nia-600" />
-                {travelType === 'seminar' && 'Seminar / Course Title *'}
-                {travelType === 'workshop' && 'Workshop Title / Theme *'}
-                {travelType === 'meeting' && 'Meeting Agenda / Topic *'}
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <FileCheck2 className="w-3.5 h-3.5 text-nia-600" />
+                  {travelType === 'seminar' && 'Seminar / Course Title (Optional)'}
+                  {travelType === 'workshop' && 'Workshop Title / Theme (Optional)'}
+                  {travelType === 'meeting' && 'Meeting Agenda / Topic (Optional)'}
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">Defaults to selected domain</span>
               </label>
               <input
                 type="text"
-                required
                 placeholder={
                   travelType === 'seminar'
                     ? 'e.g. 50th PICE National Convention & Technical Conference'
@@ -1031,61 +1063,61 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
               maxFiles={6}
             />
           </div>
-        </form>
-
-        {/* Sticky Action Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-          <div className="text-xs font-semibold flex items-center gap-1.5 text-slate-700">
-            {travelType === 'field_work' && <Compass className="w-3.5 h-3.5 text-emerald-600" />}
-            {travelType === 'seminar' && <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />}
-            {travelType === 'workshop' && <Users2 className="w-3.5 h-3.5 text-violet-600" />}
-            {travelType === 'meeting' && <Landmark className="w-3.5 h-3.5 text-teal-600" />}
-            <span>
-              {durationMode === 'multi'
-                ? `Logging ${calculatedDates.length} Days to ${
-                    travelType === 'field_work' ? 'SM7 POW' : 'CF2M9'
-                  }`
-                : `Supplying ${travelType === 'field_work' ? 'SM7 POW' : 'CF2M9'}`}
-            </span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Button variant="secondary" size="md" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              type="submit"
-              form="travel-field-form"
-              disabled={isSubmitting}
-              className={`${
-                travelType === 'field_work'
-                  ? 'bg-emerald-700 hover:bg-emerald-800'
-                  : travelType === 'seminar'
-                  ? 'bg-indigo-700 hover:bg-indigo-800'
-                  : travelType === 'workshop'
-                  ? 'bg-violet-700 hover:bg-violet-800'
-                  : 'bg-teal-700 hover:bg-teal-800'
-              } text-white font-semibold`}
-            >
-              {isSubmitting
-                ? 'Saving Log...'
-                : durationMode === 'multi'
-                ? `Save ${calculatedDates.length}-Day ${
-                    travelType === 'field_work' ? 'Field Work' : 'Event'
-                  }`
-                : `Save ${
-                    travelType === 'field_work'
-                      ? 'Field Work'
-                      : travelType === 'seminar'
-                      ? 'Seminar Log'
-                      : travelType === 'workshop'
-                      ? 'Workshop Log'
-                      : 'Meeting Log'
-                  }`}
-            </Button>
-          </div>
         </div>
+
+          {/* Sticky Action Footer */}
+          <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+            <div className="text-xs font-semibold flex items-center gap-1.5 text-slate-700">
+              {travelType === 'field_work' && <Compass className="w-3.5 h-3.5 text-emerald-600" />}
+              {travelType === 'seminar' && <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />}
+              {travelType === 'workshop' && <Users2 className="w-3.5 h-3.5 text-violet-600" />}
+              {travelType === 'meeting' && <Landmark className="w-3.5 h-3.5 text-teal-600" />}
+              <span>
+                {durationMode === 'multi'
+                  ? `Logging ${calculatedDates.length} Days to ${
+                      travelType === 'field_work' ? 'SM7 POW' : 'CF2M9'
+                    }`
+                  : `Supplying ${travelType === 'field_work' ? 'SM7 POW' : 'CF2M9'}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Button variant="secondary" size="md" type="button" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                type="submit"
+                disabled={isSubmitting}
+                className={`${
+                  travelType === 'field_work'
+                    ? 'bg-emerald-700 hover:bg-emerald-800'
+                    : travelType === 'seminar'
+                    ? 'bg-indigo-700 hover:bg-indigo-800'
+                    : travelType === 'workshop'
+                    ? 'bg-violet-700 hover:bg-violet-800'
+                    : 'bg-teal-700 hover:bg-teal-800'
+                } text-white font-semibold`}
+              >
+                {isSubmitting
+                  ? 'Saving Log...'
+                  : durationMode === 'multi'
+                  ? `Save ${calculatedDates.length}-Day ${
+                      travelType === 'field_work' ? 'Field Work' : 'Event'
+                    }`
+                  : `Save ${
+                      travelType === 'field_work'
+                        ? 'Field Work'
+                        : travelType === 'seminar'
+                        ? 'Seminar Log'
+                        : travelType === 'workshop'
+                        ? 'Workshop Log'
+                        : 'Meeting Log'
+                    }`}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );

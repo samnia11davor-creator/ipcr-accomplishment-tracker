@@ -27,6 +27,7 @@ import {
   Filter,
   Compass,
   ShieldCheck,
+  GraduationCap,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -46,7 +47,7 @@ import { CommitmentSelect } from '@/components/common/CommitmentSelect';
 import { saveAttachment, deleteAttachment } from '@/lib/attachmentStore';
 import { formatBytes } from '@/lib/storageMonitor';
 import { GoogleSheetCalendarView } from '@/components/calendar/GoogleSheetCalendarView';
-import { LogFieldWorkModal } from '@/components/calendar/LogFieldWorkModal';
+import { LogFieldWorkModal, TravelActivityType } from '@/components/calendar/LogFieldWorkModal';
 import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
 
 const BASE_CATEGORIES = [
@@ -100,6 +101,7 @@ export const ActivitiesPage: React.FC = () => {
   };
 
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
+  const [fieldWorkModalType, setFieldWorkModalType] = useState<TravelActivityType>('field_work');
   const [isDtrModalOpen, setIsDtrModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -619,15 +621,32 @@ export const ActivitiesPage: React.FC = () => {
             </button>
           </div>
 
-          {/* 3. Field Work / Seminar Button */}
+          {/* 3. Field Work Button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsFieldWorkModalOpen(true)}
+            onClick={() => {
+              setFieldWorkModalType('field_work');
+              setIsFieldWorkModalOpen(true);
+            }}
             leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
             className="border-emerald-300 text-emerald-900 bg-emerald-50/50 hover:bg-emerald-100/70 font-semibold"
           >
-            + Field Work & Seminars
+            + Field Work (SM7)
+          </Button>
+
+          {/* 4. Seminar & Workshop Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setFieldWorkModalType('seminar');
+              setIsFieldWorkModalOpen(true);
+            }}
+            leftIcon={<GraduationCap className="w-4 h-4 text-indigo-700" />}
+            className="border-indigo-300 text-indigo-900 bg-indigo-50/50 hover:bg-indigo-100/70 font-semibold"
+          >
+            + Seminar / Workshop (CF2M9)
           </Button>
 
           {/* 4. Sync Office DTR */}
@@ -1866,10 +1885,11 @@ export const ActivitiesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Field Work Logging Modal (Supplying SM7 POW) */}
+      {/* Field Work & Seminar Modal */}
       <LogFieldWorkModal
         isOpen={isFieldWorkModalOpen}
         onClose={() => setIsFieldWorkModalOpen(false)}
+        initialType={fieldWorkModalType}
       />
 
       {/* NIA Biometrics & DTR Sync Modal */}

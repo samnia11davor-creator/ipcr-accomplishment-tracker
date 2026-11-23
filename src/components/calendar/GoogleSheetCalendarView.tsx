@@ -8,13 +8,14 @@ import {
   Award,
   Maximize2,
   ShieldCheck,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { useApp } from '@/contexts/AppContext';
 import { DailyActivity, TaskAttachment } from '@/types';
 import { LogDailyTaskModal } from './LogDailyTaskModal';
-import { LogFieldWorkModal } from './LogFieldWorkModal';
+import { LogFieldWorkModal, TravelActivityType } from './LogFieldWorkModal';
 import { DayDetailsModal } from './DayDetailsModal';
 import { AttachmentViewerModal } from '@/components/common/AttachmentViewerModal';
 import { DtrSyncModal } from '@/components/dtr/DtrSyncModal';
@@ -63,6 +64,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
   // Interactive modal states
   const [isDailyTaskModalOpen, setIsDailyTaskModalOpen] = useState(false);
   const [isFieldWorkModalOpen, setIsFieldWorkModalOpen] = useState(false);
+  const [fieldWorkModalType, setFieldWorkModalType] = useState<TravelActivityType>('field_work');
   const [isDtrModalOpen, setIsDtrModalOpen] = useState(false);
   const [dtrVersion, setDtrVersion] = useState(0);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string>('');
@@ -231,12 +233,13 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
     }
   };
 
-  const handleOpenFieldWork = (date?: string) => {
+  const handleOpenFieldWork = (date?: string, type: TravelActivityType = 'field_work') => {
     const defaultDay = String(Math.min(new Date().getDate(), 28)).padStart(2, '0');
     setSelectedDateForModal(
       date ||
         `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${defaultDay}`
     );
+    setFieldWorkModalType(type);
     setIsFieldWorkModalOpen(true);
   };
 
@@ -293,18 +296,29 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
               leftIcon={<Plus className="w-4 h-4" />}
               className="bg-nia-700 hover:bg-nia-800 text-white font-semibold shadow-xs"
             >
-              + Log Work / Document Task
+              + Log Document Task
             </Button>
 
-            {/* Direct Travel / Field Work / Seminar Logger */}
+            {/* Direct Field Work Logger */}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleOpenFieldWork()}
+              onClick={() => handleOpenFieldWork(undefined, 'field_work')}
               leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
               className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold shadow-xs"
             >
-              + Field Work & Seminars
+              + Field Work (SM7)
+            </Button>
+
+            {/* Direct Seminar & Workshop Logger */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenFieldWork(undefined, 'seminar')}
+              leftIcon={<GraduationCap className="w-4 h-4 text-indigo-700" />}
+              className="border-indigo-300 text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 font-semibold shadow-xs"
+            >
+              + Seminar / Workshop (CF2M9)
             </Button>
 
             {/* Sync Office DTR / Biometrics */}
@@ -601,6 +615,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
         isOpen={isFieldWorkModalOpen}
         onClose={() => setIsFieldWorkModalOpen(false)}
         initialDate={selectedDateForModal}
+        initialType={fieldWorkModalType}
       />
 
       <DayDetailsModal
@@ -608,7 +623,7 @@ export const GoogleSheetCalendarView: React.FC<GoogleSheetCalendarViewProps> = (
         onClose={() => setIsDayDetailsOpen(false)}
         dateStr={selectedDayForDetails}
         activities={activities}
-        onOpenFieldWorkModal={(d) => handleOpenFieldWork(d)}
+        onOpenFieldWorkModal={(d, type) => handleOpenFieldWork(d, type)}
         onOpenActivityModal={(d) => handleOpenDailyTask(d)}
         onViewAttachment={(att) => setViewingAttachment(att)}
       />

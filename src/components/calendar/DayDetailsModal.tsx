@@ -28,7 +28,7 @@ interface DayDetailsModalProps {
   onClose: () => void;
   dateStr: string;
   activities: DailyActivity[];
-  onOpenFieldWorkModal: (date: string) => void;
+  onOpenFieldWorkModal: (date: string, type?: 'field_work' | 'seminar' | 'workshop' | 'meeting') => void;
   onOpenActivityModal: (date: string) => void;
   onViewAttachment: (att: TaskAttachment) => void;
 }
@@ -150,19 +150,31 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
                   }}
                   leftIcon={<Plus className="w-4 h-4" />}
                 >
-                  + Log Document / Work Task
+                  + Log Document Task
                 </Button>
                 <Button
                   variant="outline"
                   size="md"
                   onClick={() => {
                     onClose();
-                    onOpenFieldWorkModal(dateStr);
+                    onOpenFieldWorkModal(dateStr, 'field_work');
                   }}
                   leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
                   className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold"
                 >
-                  + Field Work & Seminars
+                  + Field Work (SM7)
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    onClose();
+                    onOpenFieldWorkModal(dateStr, 'seminar');
+                  }}
+                  leftIcon={<GraduationCap className="w-4 h-4 text-indigo-700" />}
+                  className="border-indigo-300 text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 font-semibold"
+                >
+                  + Seminar & Workshop (CF2M9)
                 </Button>
               </div>
             </div>
