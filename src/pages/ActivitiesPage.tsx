@@ -532,96 +532,30 @@ export const ActivitiesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            Daily Activities & Field Work
-            <Badge variant="blue" size="sm" className="font-normal font-sans">
+      {/* 1. Page Header: Title & Action Center */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              Daily Activities & Field Work
+            </h1>
+            <Badge variant="blue" size="sm" className="font-normal font-sans shrink-0">
               Sheet2 Verified
             </Badge>
             {viewMode === 'calendar' && (
-              <Badge variant="emerald" size="sm" className="font-semibold">
+              <Badge variant="emerald" size="sm" className="font-semibold shrink-0">
                 SM7 POW Sync
               </Badge>
             )}
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Spreadsheet logsheet & monthly work calendar • Preloaded with official NIA Region XI projects & doc types supplying your IPCR goals
+          </div>
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+            Official NIA Region XI engineering logsheet, field investigations & seminar tracking supplying IPCR goals.
           </p>
         </div>
 
-        {/* Clean, Non-wrapping Action Toolbar */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-nowrap self-start lg:self-auto">
-          {/* 1. Filter & Search Dropdown Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
-              showFilters
-                ? 'bg-nia-800 text-white border-nia-800 shadow-sm'
-                : activeFiltersCount > 0
-                ? 'bg-nia-50 text-nia-900 border-nia-300 hover:bg-nia-100 shadow-xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-xs'
-            }`}
-            title={showFilters ? 'Hide search and filters' : 'Show search and filters'}
-          >
-            <Filter className={`w-3.5 h-3.5 ${showFilters ? 'text-white' : 'text-nia-600'}`} />
-            <span>Search & Filters</span>
-            {activeFiltersCount > 0 && (
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  showFilters ? 'bg-white text-nia-900' : 'bg-nia-700 text-white'
-                }`}
-              >
-                {activeFiltersCount}
-              </span>
-            )}
-            {showFilters ? (
-              <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5 text-slate-400" />
-            )}
-          </button>
-
-          {/* 2. View Mode Segmented Toggle: Table View, Calendar & Field Work, Date Groups */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              onClick={() => handleViewChange('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <TableIcon className="w-3.5 h-3.5" />
-              Table View
-            </button>
-            <button
-              onClick={() => handleViewChange('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'calendar'
-                  ? 'bg-white text-emerald-950 font-bold shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5 text-emerald-700" />
-              Calendar & Field Work
-            </button>
-            <button
-              onClick={() => handleViewChange('timeline')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'timeline'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Date Groups
-            </button>
-          </div>
-
-          {/* 3. Field Work Button */}
+        {/* Creation Action Buttons Group */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Field Work Button */}
           <Button
             variant="outline"
             size="sm"
@@ -630,12 +564,12 @@ export const ActivitiesPage: React.FC = () => {
               setIsFieldWorkModalOpen(true);
             }}
             leftIcon={<Compass className="w-4 h-4 text-emerald-700" />}
-            className="border-emerald-300 text-emerald-900 bg-emerald-50/50 hover:bg-emerald-100/70 font-semibold"
+            className="border-emerald-300 text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 font-semibold shadow-xs"
           >
             + Field Work (SM7)
           </Button>
 
-          {/* 4. Seminar & Workshop Button */}
+          {/* Seminar & Workshop Button */}
           <Button
             variant="outline"
             size="sm"
@@ -644,23 +578,23 @@ export const ActivitiesPage: React.FC = () => {
               setIsFieldWorkModalOpen(true);
             }}
             leftIcon={<GraduationCap className="w-4 h-4 text-indigo-700" />}
-            className="border-indigo-300 text-indigo-900 bg-indigo-50/50 hover:bg-indigo-100/70 font-semibold"
+            className="border-indigo-300 text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 font-semibold shadow-xs"
           >
             + Seminar / Workshop (CF2M9)
           </Button>
 
-          {/* 4. Sync Office DTR */}
+          {/* Sync Office DTR */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsDtrModalOpen(true)}
             leftIcon={<ShieldCheck className="w-4 h-4 text-emerald-700" />}
-            className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold"
+            className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold shadow-xs"
           >
             Sync DTR
           </Button>
 
-          {/* 5. Primary Action Button */}
+          {/* Primary Action Button */}
           <Button
             variant="primary"
             size="sm"
@@ -673,10 +607,82 @@ export const ActivitiesPage: React.FC = () => {
               }
             }}
             leftIcon={isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            className="bg-nia-700 hover:bg-nia-800 text-white font-semibold shadow-xs"
           >
-            {isFormOpen ? 'Close Form' : 'Log Daily Work'}
+            {isFormOpen ? 'Close Form' : '+ Log Daily Work'}
           </Button>
         </div>
+      </div>
+
+      {/* 2. Secondary Navigation & View Control Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* View Mode Segmented Switcher */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button
+            onClick={() => handleViewChange('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'table'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <TableIcon className="w-3.5 h-3.5" />
+            Table View
+          </button>
+          <button
+            onClick={() => handleViewChange('calendar')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'calendar'
+                ? 'bg-white text-emerald-950 font-bold shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+            Calendar & Field Work
+          </button>
+          <button
+            onClick={() => handleViewChange('timeline')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'timeline'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Date Groups
+          </button>
+        </div>
+
+        {/* Filter & Search Dropdown Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            showFilters
+              ? 'bg-nia-800 text-white border-nia-800 shadow-sm'
+              : activeFiltersCount > 0
+              ? 'bg-nia-50 text-nia-900 border-nia-300 hover:bg-nia-100 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-xs'
+          }`}
+          title={showFilters ? 'Hide search and filters' : 'Show search and filters'}
+        >
+          <Filter className={`w-3.5 h-3.5 ${showFilters ? 'text-white' : 'text-nia-600'}`} />
+          <span>Search & Filters</span>
+          {activeFiltersCount > 0 && (
+            <span
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                showFilters ? 'bg-white text-nia-900' : 'bg-nia-700 text-white'
+              }`}
+            >
+              {activeFiltersCount}
+            </span>
+          )}
+          {showFilters ? (
+            <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5 ml-0.5 text-slate-400" />
+          )}
+        </button>
       </div>
 
       {/* Quick Summary Pill Bar */}
