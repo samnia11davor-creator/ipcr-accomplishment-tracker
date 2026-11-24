@@ -234,6 +234,27 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
     return result.length > 0 ? result : [startDate];
   }, [durationMode, date, startDate, endDate, excludeWeekends]);
 
+  // Resolve project name based on type and preference (Must be declared before any early return)
+  const resolvedProject = useMemo(() => {
+    if (travelType === 'field_work') {
+      return isCustomProject && customProjectInput.trim()
+        ? customProjectInput.trim()
+        : selectedProject;
+    }
+
+    if (hasSpecificProject) {
+      return isCustomProject && customProjectInput.trim()
+        ? customProjectInput.trim()
+        : selectedProject;
+    }
+
+    // Generic defaults without forcing a specific irrigation project
+    if (travelType === 'seminar') return 'Institutional / Capability Building';
+    if (travelType === 'workshop') return 'Regional Planning & Design Convergence';
+    if (travelType === 'meeting') return 'Inter-Agency Coordination';
+    return 'Institutional / Regional Office XI';
+  }, [travelType, hasSpecificProject, isCustomProject, customProjectInput, selectedProject]);
+
   if (!isOpen) return null;
 
   // Determine current category scope list
@@ -261,27 +282,6 @@ export const LogFieldWorkModal: React.FC<LogFieldWorkModalProps> = ({
     else if (travelType === 'workshop') setWorkshopScope(val);
     else setMeetingScope(val);
   };
-
-  // Resolve project name based on type and preference
-  const resolvedProject = useMemo(() => {
-    if (travelType === 'field_work') {
-      return isCustomProject && customProjectInput.trim()
-        ? customProjectInput.trim()
-        : selectedProject;
-    }
-
-    if (hasSpecificProject) {
-      return isCustomProject && customProjectInput.trim()
-        ? customProjectInput.trim()
-        : selectedProject;
-    }
-
-    // Generic defaults without forcing a specific irrigation project
-    if (travelType === 'seminar') return 'Institutional / Capability Building';
-    if (travelType === 'workshop') return 'Regional Planning & Design Convergence';
-    if (travelType === 'meeting') return 'Inter-Agency Coordination';
-    return 'Institutional / Regional Office XI';
-  }, [travelType, hasSpecificProject, isCustomProject, customProjectInput, selectedProject]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
